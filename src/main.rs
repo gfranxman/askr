@@ -9,7 +9,7 @@ use clap::Parser;
 use cli::{Args, PromptConfig};
 use error::{PromptError, Result};
 use validation::{ValidationEngine, ValidatorType};
-use validation::rules::{RequiredValidator, MinLengthValidator, MaxLengthValidator, PatternValidator, EmailValidator, HostnameValidator, UrlValidator, Ipv4Validator, Ipv6Validator, IntegerValidator, FloatValidator, RangeValidator, PositiveValidator, NegativeValidator};
+use validation::rules::{RequiredValidator, MinLengthValidator, MaxLengthValidator, PatternValidator, EmailValidator, HostnameValidator, UrlValidator, Ipv4Validator, Ipv6Validator, IntegerValidator, FloatValidator, RangeValidator, PositiveValidator, NegativeValidator, ChoiceValidator, DateValidator, TimeValidator, DateTimeValidator, FileExistsValidator, DirExistsValidator, PathExistsValidator, ReadableValidator, WritableValidator, ExecutableValidator};
 use output::{OutputFormatter, DefaultFormatter, JsonFormatter, RawFormatter};
 use ui::{Terminal, TerminalCapabilities};
 use ui::interactive::InteractivePrompt;
@@ -222,11 +222,125 @@ fn create_validator(validator_type: &ValidatorType, rule_config: &validation::Va
             }
             Ok(Box::new(validator))
         }
-        _ => {
-            // For now, return an error for unimplemented validators
-            Err(PromptError::InvalidArguments(
-                format!("Validator type {:?} not yet implemented", validator_type)
-            ))
+        ValidatorType::Choices(choices) => {
+            let mut validator = ChoiceValidator::new(choices.clone());
+            
+            // Extract parameters
+            if let Some(case_sensitive_str) = rule_config.parameters.get("case_sensitive") {
+                if let Ok(case_sensitive) = case_sensitive_str.parse::<bool>() {
+                    validator = validator.case_sensitive(case_sensitive);
+                }
+            }
+            
+            if let Some(min_choices_str) = rule_config.parameters.get("min_choices") {
+                if let Ok(min_choices) = min_choices_str.parse::<usize>() {
+                    validator = validator.min_choices(min_choices);
+                }
+            }
+            
+            if let Some(max_choices_str) = rule_config.parameters.get("max_choices") {
+                if let Ok(max_choices) = max_choices_str.parse::<usize>() {
+                    validator = validator.max_choices(max_choices);
+                }
+            }
+            
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Date(format) => {
+            let mut validator = DateValidator::new(format.clone());
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Time(format) => {
+            let mut validator = TimeValidator::new(format.clone());
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::DateTime(format) => {
+            let mut validator = DateTimeValidator::new(format.clone());
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::FileExists => {
+            let mut validator = FileExistsValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::DirExists => {
+            let mut validator = DirExistsValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::PathExists => {
+            let mut validator = PathExistsValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Readable => {
+            let mut validator = ReadableValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Writable => {
+            let mut validator = WritableValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Executable => {
+            let mut validator = ExecutableValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
         }
     }
 }
