@@ -9,7 +9,7 @@ use clap::Parser;
 use cli::{Args, PromptConfig};
 use error::{PromptError, Result};
 use validation::{ValidationEngine, ValidatorType};
-use validation::rules::{RequiredValidator, MinLengthValidator, MaxLengthValidator, PatternValidator};
+use validation::rules::{RequiredValidator, MinLengthValidator, MaxLengthValidator, PatternValidator, EmailValidator, HostnameValidator, UrlValidator, Ipv4Validator, Ipv6Validator, IntegerValidator, FloatValidator, RangeValidator, PositiveValidator, NegativeValidator};
 use output::{OutputFormatter, DefaultFormatter, JsonFormatter, RawFormatter};
 use ui::{Terminal, TerminalCapabilities};
 use ui::interactive::InteractivePrompt;
@@ -114,6 +114,106 @@ fn create_validator(validator_type: &ValidatorType, rule_config: &validation::Va
         }
         ValidatorType::Pattern(pattern) => {
             let mut validator = PatternValidator::new(pattern)?;
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Email => {
+            let mut validator = EmailValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Hostname => {
+            let mut validator = HostnameValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Url => {
+            let mut validator = UrlValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Ipv4 => {
+            let mut validator = Ipv4Validator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Ipv6 => {
+            let mut validator = Ipv6Validator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Integer => {
+            let mut validator = IntegerValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Float => {
+            let mut validator = FloatValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Range(min, max) => {
+            let mut validator = RangeValidator::between(*min, *max);
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Positive => {
+            let mut validator = PositiveValidator::new();
+            if let Some(priority) = &rule_config.priority {
+                validator = validator.with_priority(*priority);
+            }
+            if let Some(msg) = &rule_config.custom_message {
+                validator = validator.with_message(msg);
+            }
+            Ok(Box::new(validator))
+        }
+        ValidatorType::Negative => {
+            let mut validator = NegativeValidator::new();
             if let Some(priority) = &rule_config.priority {
                 validator = validator.with_priority(*priority);
             }
