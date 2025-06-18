@@ -11,6 +11,8 @@ use error::{PromptError, Result};
 use validation::{ValidationEngine, ValidatorType};
 use validation::rules::{RequiredValidator, MinLengthValidator, MaxLengthValidator, PatternValidator};
 use output::{OutputFormatter, DefaultFormatter, JsonFormatter, RawFormatter};
+use ui::{Terminal, TerminalCapabilities};
+use ui::interactive::InteractivePrompt;
 
 fn main() {
     if let Err(e) = run() {
@@ -23,24 +25,26 @@ fn run() -> Result<()> {
     let args = Args::parse();
     let config = PromptConfig::from_args(args)?;
     
-    // For now, implement a basic version that works with our current components
-    let mut engine = ValidationEngine::new();
-    
-    // Build validators from config
-    for rule_config in &config.validation_rules {
-        let validator = create_validator(&rule_config.validator_type, &rule_config)?;
-        engine.add_validator(validator);
-    }
-    
-    // Get input (for now, just read from stdin if quiet mode, otherwise prompt)
+    // Get input based on mode
     let input = if config.quiet_mode {
         read_from_stdin()?
     } else {
-        // For now, just a simple prompt - will be replaced with interactive UI later
-        prompt_simple(&config.prompt_text.as_deref().unwrap_or("Enter input:"))?
+        // Check if we can use interactive mode
+        let terminal = Terminal::new()?;
+        
+        if terminal.capabilities().cursor_control {
+            // Use interactive terminal UI
+            let engine = build_validation_engine(&config)?;
+            let mut interactive = InteractivePrompt::new(terminal, engine, config.clone())?;
+            interactive.prompt()?
+        } else {
+            // Fall back to simple prompt
+            prompt_simple(&config.prompt_text.as_deref().unwrap_or("Enter input:"))?
+        }
     };
     
-    // Validate input
+    // Final validation for output
+    let engine = build_validation_engine(&config)?;
     let summary = engine.validate(&input);
     
     // Format output based on config
@@ -65,6 +69,18 @@ fn run() -> Result<()> {
             summary.error.unwrap_or_else(|| "Validation failed".to_string())
         ))
     }
+}
+
+fn build_validation_engine(config: &PromptConfig) -> Result<ValidationEngine> {
+    let mut engine = ValidationEngine::new();
+    
+    // Build validators from config
+    for rule_config in &config.validation_rules {
+        let validator = create_validator(&rule_config.validator_type, &rule_config)?;
+        engine.add_validator(validator);
+    }
+    
+    Ok(engine)
 }
 
 fn create_validator(validator_type: &ValidatorType, rule_config: &validation::ValidationRuleConfig) -> Result<Box<dyn validation::Validator>> {

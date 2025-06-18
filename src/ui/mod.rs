@@ -4,4 +4,6 @@ pub mod terminal;
 pub mod colors;
 pub mod layout;
 
-// TODO: Implement UI modules
+pub use terminal::{Terminal, TerminalCapabilities, UIMode};
+pub use colors::{ColorScheme, Colorizer, ColoredText};
+pub use layout::{LayoutManager, Screen};
