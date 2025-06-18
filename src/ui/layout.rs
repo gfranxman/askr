@@ -240,6 +240,15 @@ impl<W: Write + ExecutableCommand> Screen<W> {
         Ok(())
     }
     
+    pub fn position_cursor_at_input_pos(&mut self, input: &str, cursor_pos: usize, prompt_width: u16) -> io::Result<()> {
+        let chars: Vec<char> = input.chars().collect();
+        let text_before_cursor: String = chars.iter().take(cursor_pos).collect();
+        let cursor_x = prompt_width + text_before_cursor.width() as u16;
+        let (_, y) = self.layout.input_position(prompt_width);
+        self.move_to(cursor_x, y)?;
+        Ok(())
+    }
+    
     pub fn flush(&mut self) -> io::Result<()> {
         self.writer.flush()
     }
