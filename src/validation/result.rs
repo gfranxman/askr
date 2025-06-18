@@ -22,6 +22,16 @@ impl ValidationResult {
         }
     }
     
+    pub fn success_with_priority(rule_name: impl Into<String>, priority: Priority) -> Self {
+        Self {
+            rule_name: rule_name.into(),
+            passed: true,
+            priority,
+            message: None,
+            metadata: HashMap::new(),
+        }
+    }
+    
     pub fn failure(rule_name: impl Into<String>, priority: Priority, message: impl Into<String>) -> Self {
         Self {
             rule_name: rule_name.into(),
@@ -92,7 +102,13 @@ pub struct ValidationMetadata {
 }
 
 impl ValidationSummary {
-    pub fn new(value: String, results: Vec<ValidationResult>) -> Self {
+    pub fn new(value: String, mut results: Vec<ValidationResult>) -> Self {
+        // Sort results by priority (Critical first)
+        results.sort_by(|a, b| {
+            a.priority.cmp(&b.priority)
+                .then_with(|| a.rule_name.cmp(&b.rule_name))
+        });
+        
         let valid = results.iter().all(|r| r.passed);
         let error = if valid {
             None

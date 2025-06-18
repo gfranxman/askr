@@ -8,6 +8,14 @@ repository = "https://github.com/user/prompt"
 keywords = ["cli", "prompt", "validation", "interactive", "terminal"]
 categories = ["command-line-utilities"]
 
+[[bin]]
+name = "prompt"
+path = "src/main.rs"
+
+[lib]
+name = "prompt"
+path = "src/lib.rs"
+
 [dependencies]
 # Terminal control and UI
 crossterm = "0.27"

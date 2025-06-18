@@ -198,7 +198,12 @@ impl Validator for UrlValidator {
         
         // Must start with http:// or https://
         if !input.starts_with("http://") && !input.starts_with("https://") {
-            if input.len() >= 8 && !input.starts_with("http") {
+            // If we have enough characters to rule out http/https, it's an error
+            if input.len() >= 7 && !input.starts_with("http") {
+                return PartialValidationResult::error_at(0);
+            }
+            // Also check for other common protocols that we don't support
+            if input.starts_with("ftp://") || input.starts_with("ssh://") || input.starts_with("file://") {
                 return PartialValidationResult::error_at(0);
             }
         }
@@ -340,5 +345,301 @@ impl Validator for Ipv6Validator {
     
     fn name(&self) -> &str {
         "ipv6"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_email_validator_valid() {
+        let validator = EmailValidator::new();
+        
+        let valid_emails = [
+            "user@example.com",
+            "test.email@domain.co.uk",
+            "user+tag@example.org",
+            "user_name@domain-name.com",
+            "123@456.com",
+            "a@b.co",
+        ];
+        
+        for email in valid_emails {
+            let result = validator.validate(email);
+            assert!(result.passed, "Email should be valid: {}", email);
+        }
+    }
+
+    #[test]
+    fn test_email_validator_invalid() {
+        let validator = EmailValidator::new();
+        
+        let invalid_emails = [
+            "not-an-email",
+            "@example.com",
+            "user@",
+            "user@.example.com",
+            "user@example.",
+            "user name@example.com",
+            "",
+        ];
+        
+        for email in invalid_emails {
+            let result = validator.validate(email);
+            assert!(!result.passed, "Email should be invalid: {}", email);
+            assert!(result.message.is_some());
+        }
+    }
+
+    #[test]
+    fn test_hostname_validator_valid() {
+        let validator = HostnameValidator::new();
+        
+        let valid_hostnames = [
+            "example.com",
+            "subdomain.example.com",
+            "test-server.local",
+            "server123.example.org",
+            "a.b.c.d",
+            "localhost",
+        ];
+        
+        for hostname in valid_hostnames {
+            let result = validator.validate(hostname);
+            assert!(result.passed, "Hostname should be valid: {}", hostname);
+        }
+    }
+
+    #[test]
+    fn test_hostname_validator_invalid() {
+        let validator = HostnameValidator::new();
+        
+        let invalid_hostnames = [
+            "",
+            ".example.com",
+            "example..com",
+            "example.com.",
+            "-example.com",
+            "example-.com",
+            "ex ample.com",
+            "very-long-hostname-that-exceeds-the-maximum-allowed-length-for-a-single-label-in-dns.com",
+        ];
+        
+        for hostname in invalid_hostnames {
+            let result = validator.validate(hostname);
+            assert!(!result.passed, "Hostname should be invalid: {}", hostname);
+        }
+    }
+
+    #[test]
+    fn test_url_validator_valid() {
+        let validator = UrlValidator::new();
+        
+        let valid_urls = [
+            "https://example.com",
+            "http://subdomain.example.org",
+            "https://example.com/path/to/resource",
+            "https://example.com/path",
+        ];
+        
+        for url in valid_urls {
+            let result = validator.validate(url);
+            assert!(result.passed, "URL should be valid: {}", url);
+        }
+    }
+
+    #[test]
+    fn test_url_validator_invalid() {
+        let validator = UrlValidator::new();
+        
+        let invalid_urls = [
+            "",
+            "not-a-url",
+            "ftp://example.com", // Only http/https supported
+            "https://",
+            "http://",
+            "example.com", // Missing protocol
+            "https://exam ple.com", // Space in hostname
+        ];
+        
+        for url in invalid_urls {
+            let result = validator.validate(url);
+            assert!(!result.passed, "URL should be invalid: {}", url);
+        }
+    }
+
+    #[test]
+    fn test_ipv4_validator_valid() {
+        let validator = Ipv4Validator::new();
+        
+        let valid_ips = [
+            "192.168.1.1",
+            "10.0.0.1",
+            "172.16.255.254",
+            "127.0.0.1",
+            "0.0.0.0",
+            "255.255.255.255",
+        ];
+        
+        for ip in valid_ips {
+            let result = validator.validate(ip);
+            assert!(result.passed, "IPv4 should be valid: {}", ip);
+        }
+    }
+
+    #[test]
+    fn test_ipv4_validator_invalid() {
+        let validator = Ipv4Validator::new();
+        
+        let invalid_ips = [
+            "",
+            "192.168.1",
+            "192.168.1.256",
+            "192.168.1.1.1",
+            "192.168.1.-1",
+            "192.168.01.1", // Leading zeros
+            "192.168.1.1/24", // CIDR notation
+            "not.an.ip.address",
+        ];
+        
+        for ip in invalid_ips {
+            let result = validator.validate(ip);
+            assert!(!result.passed, "IPv4 should be invalid: {}", ip);
+        }
+    }
+
+    #[test]
+    fn test_ipv6_validator_valid() {
+        let validator = Ipv6Validator::new();
+        
+        let valid_ips = [
+            "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+            "2001:db8:85a3::8a2e:370:7334",
+            "::1",
+            "::",
+            "2001:db8::1",
+            "fe80::1",
+        ];
+        
+        for ip in valid_ips {
+            let result = validator.validate(ip);
+            assert!(result.passed, "IPv6 should be valid: {}", ip);
+        }
+    }
+
+    #[test]
+    fn test_ipv6_validator_invalid() {
+        let validator = Ipv6Validator::new();
+        
+        let invalid_ips = [
+            "",
+            "192.168.1.1", // IPv4
+            "2001:0db8:85a3::8a2e:370g:7334", // Invalid character 'g'
+            "2001:0db8:85a3:::8a2e:370:7334", // Triple colon
+            "2001:0db8:85a3:0000:0000:8a2e:0370:7334:extra", // Too many groups
+            "not:an:ipv6:address",
+        ];
+        
+        for ip in invalid_ips {
+            let result = validator.validate(ip);
+            assert!(!result.passed, "IPv6 should be invalid: {}", ip);
+        }
+    }
+
+    #[test]
+    fn test_custom_messages() {
+        let email_validator = EmailValidator::new().with_message("Please enter a valid email");
+        let result = email_validator.validate("invalid");
+        assert!(!result.passed);
+        assert_eq!(result.message.unwrap(), "Please enter a valid email");
+        
+        let hostname_validator = HostnameValidator::new().with_message("Invalid hostname");
+        let result = hostname_validator.validate("invalid..hostname");
+        assert!(!result.passed);
+        assert_eq!(result.message.unwrap(), "Invalid hostname");
+    }
+
+    #[test]
+    fn test_custom_priorities() {
+        let validator = EmailValidator::new().with_priority(Priority::Low);
+        assert_eq!(validator.priority(), Priority::Low);
+        
+        let result = validator.validate("invalid");
+        assert!(!result.passed);
+        assert_eq!(result.priority, Priority::Low);
+    }
+
+    #[test]
+    fn test_partial_validation() {
+        let email_validator = EmailValidator::new();
+        
+        // Valid partial input
+        let result = email_validator.partial_validate("user@exam", 8);
+        assert!(result.first_error_pos.is_none());
+        
+        // Invalid partial input (multiple @ symbols)
+        let result = email_validator.partial_validate("user@exam@ple", 10);
+        assert!(result.first_error_pos.is_some());
+        
+        let url_validator = UrlValidator::new();
+        
+        // Valid partial URL
+        let result = url_validator.partial_validate("https://exa", 11);
+        assert!(result.first_error_pos.is_none());
+        
+        // Invalid URL start
+        let result = url_validator.partial_validate("ftp://", 6);
+        assert!(result.first_error_pos.is_some());
+    }
+
+    #[test]
+    fn test_edge_cases() {
+        // Very long email
+        let long_local = "a".repeat(64);
+        let long_domain = "b".repeat(63);
+        let long_email = format!("{}@{}.com", long_local, long_domain);
+        
+        let email_validator = EmailValidator::new();
+        let result = email_validator.validate(&long_email);
+        // Should handle long emails gracefully (may pass or fail depending on implementation)
+        
+        // IPv4 edge cases
+        let ipv4_validator = Ipv4Validator::new();
+        assert!(ipv4_validator.validate("0.0.0.0").passed);
+        assert!(ipv4_validator.validate("255.255.255.255").passed);
+        
+        // IPv6 edge cases
+        let ipv6_validator = Ipv6Validator::new();
+        assert!(ipv6_validator.validate("::").passed);
+        assert!(ipv6_validator.validate("::1").passed);
+    }
+
+    #[test]
+    fn test_international_domains() {
+        let hostname_validator = HostnameValidator::new();
+        
+        // Note: These tests depend on how the hostname validator handles IDN
+        // Basic ASCII domains should work
+        assert!(hostname_validator.validate("example.com").passed);
+        assert!(hostname_validator.validate("subdomain.example.org").passed);
+    }
+
+    #[test]
+    fn test_validator_names() {
+        assert_eq!(EmailValidator::new().name(), "email");
+        assert_eq!(HostnameValidator::new().name(), "hostname");
+        assert_eq!(UrlValidator::new().name(), "url");
+        assert_eq!(Ipv4Validator::new().name(), "ipv4");
+        assert_eq!(Ipv6Validator::new().name(), "ipv6");
+    }
+
+    #[test]
+    fn test_validator_priorities() {
+        assert_eq!(EmailValidator::new().priority(), Priority::High);
+        assert_eq!(HostnameValidator::new().priority(), Priority::High);
+        assert_eq!(UrlValidator::new().priority(), Priority::High);
+        assert_eq!(Ipv4Validator::new().priority(), Priority::High);
+        assert_eq!(Ipv6Validator::new().priority(), Priority::High);
     }
 }

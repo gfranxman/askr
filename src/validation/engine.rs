@@ -216,3 +216,209 @@ impl Default for ValidationEngine {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::validation::rules::basic::{RequiredValidator, MinLengthValidator, MaxLengthValidator};
+
+    #[test]
+    fn test_empty_validation_engine() {
+        let engine = ValidationEngine::new();
+        let summary = engine.validate("test");
+        
+        assert!(summary.valid);
+        assert!(summary.validation_results.is_empty());
+        assert!(summary.error.is_none());
+    }
+
+    #[test]
+    fn test_single_validator() {
+        let mut engine = ValidationEngine::new();
+        engine.add_validator(Box::new(RequiredValidator::new()));
+        
+        // Test valid input
+        let summary = engine.validate("hello");
+        assert!(summary.valid);
+        assert_eq!(summary.validation_results.len(), 1);
+        assert!(summary.validation_results[0].passed);
+        
+        // Test invalid input
+        let summary = engine.validate("");
+        assert!(!summary.valid);
+        assert_eq!(summary.validation_results.len(), 1);
+        assert!(!summary.validation_results[0].passed);
+        assert!(summary.error.is_some());
+    }
+
+    #[test]
+    fn test_multiple_validators() {
+        let mut engine = ValidationEngine::new();
+        engine.add_validator(Box::new(RequiredValidator::new()));
+        engine.add_validator(Box::new(MinLengthValidator::new(5)));
+        engine.add_validator(Box::new(MaxLengthValidator::new(10)));
+        
+        // Test all validators pass
+        let summary = engine.validate("hello");
+        assert!(summary.valid);
+        assert_eq!(summary.validation_results.len(), 3);
+        assert!(summary.validation_results.iter().all(|r| r.passed));
+        
+        // Test some validators fail
+        let summary = engine.validate("hi");
+        assert!(!summary.valid);
+        assert_eq!(summary.validation_results.len(), 3);
+        
+        // After sorting: required (Critical), max_length (Medium), min_length (Medium)
+        assert!(summary.validation_results[0].passed); // required
+        assert!(summary.validation_results[1].passed); // max_length (passes for "hi")
+        assert!(!summary.validation_results[2].passed); // min_length (fails for "hi")
+    }
+
+    #[test]
+    fn test_priority_sorting() {
+        let mut engine = ValidationEngine::new();
+        
+        // Add validators in non-priority order
+        engine.add_validator(Box::new(MinLengthValidator::new(10))); // Medium priority
+        engine.add_validator(Box::new(RequiredValidator::new())); // Critical priority
+        
+        let summary = engine.validate("");
+        assert!(!summary.valid);
+        
+        // Results should be sorted by priority (Critical first)
+        assert_eq!(summary.validation_results[0].rule_name, "required");
+        assert_eq!(summary.validation_results[1].rule_name, "min_length");
+    }
+
+    #[test]
+    fn test_error_display_filtering() {
+        let mut engine = ValidationEngine::new();
+        engine.add_validator(Box::new(RequiredValidator::new()));
+        engine.add_validator(Box::new(MinLengthValidator::new(5)));
+        
+        let errors = engine.get_display_errors("", Some(1));
+        
+        // Should only show 1 error (the most critical)
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].rule_name, "required");
+        assert_eq!(errors[0].priority, Priority::Critical);
+    }
+
+    #[test]
+    fn test_partial_validation() {
+        let mut engine = ValidationEngine::new();
+        engine.add_validator(Box::new(MaxLengthValidator::new(5)));
+        
+        // Test valid partial input
+        let result = engine.partial_validate("hello", 5);
+        assert!(result.first_error_pos.is_none());
+        assert!(result.can_continue);
+        
+        // Test invalid partial input
+        let result = engine.partial_validate("hello world", 8);
+        assert!(result.first_error_pos.is_some());
+        assert_eq!(result.first_error_pos.unwrap(), 5);
+    }
+
+    #[test]
+    fn test_validation_performance_timing() {
+        let mut engine = ValidationEngine::new();
+        engine.add_validator(Box::new(RequiredValidator::new()));
+        
+        let summary = engine.validate("test");
+        
+        // Should record timing metadata
+        assert!(summary.metadata.validation_time_ms >= 0);
+        assert!(summary.metadata.validation_time_ms < 1000); // Should be very fast
+    }
+
+    #[test]
+    fn test_get_potential_error_messages() {
+        let mut engine = ValidationEngine::new();
+        engine.add_validator(Box::new(RequiredValidator::new()));
+        engine.add_validator(Box::new(MinLengthValidator::new(5)));
+        
+        let messages = engine.get_potential_error_messages();
+        
+        // Should contain error messages from all validators
+        assert!(!messages.is_empty());
+        assert!(messages.iter().any(|msg| msg.contains("required")));
+        assert!(messages.iter().any(|msg| msg.contains("Minimum length")));
+    }
+
+    #[test]
+    fn test_validation_engine_without_cache() {
+        let engine = ValidationEngine::without_cache();
+        
+        // Should still work without cache
+        let summary = engine.validate("test");
+        assert!(summary.valid);
+    }
+
+    #[test]
+    fn test_validation_caching() {
+        let mut engine = ValidationEngine::new();
+        engine.add_validator(Box::new(RequiredValidator::new()));
+        
+        // First validation
+        let summary1 = engine.validate("test");
+        let time1 = summary1.metadata.validation_time_ms;
+        
+        // Second validation of same input (should use cache)
+        let summary2 = engine.validate("test");
+        let time2 = summary2.metadata.validation_time_ms;
+        
+        // Results should be identical
+        assert_eq!(summary1.valid, summary2.valid);
+        assert_eq!(summary1.validation_results.len(), summary2.validation_results.len());
+        
+        // Second call might be faster due to caching
+        assert!(time2 <= time1 + 1); // Allow for timing variations
+    }
+
+    #[test]
+    fn test_cache_invalidation() {
+        let mut engine = ValidationEngine::new();
+        engine.add_validator(Box::new(RequiredValidator::new()));
+        
+        // Cache some results
+        let _summary1 = engine.validate("test");
+        
+        // Add another validator (should clear cache)
+        engine.add_validator(Box::new(MinLengthValidator::new(5)));
+        
+        // Validation should still work correctly
+        let summary2 = engine.validate("testing");
+        assert!(summary2.valid);
+        assert_eq!(summary2.validation_results.len(), 2);
+    }
+
+    #[test]
+    fn test_clear_cache() {
+        let mut engine = ValidationEngine::new();
+        engine.add_validator(Box::new(RequiredValidator::new()));
+        
+        // Cache some results
+        let _summary = engine.validate("test");
+        
+        // Clear cache manually
+        engine.clear_cache();
+        
+        // Should still work
+        let summary = engine.validate("test");
+        assert!(summary.valid);
+    }
+
+    #[test]
+    fn test_validator_count() {
+        let mut engine = ValidationEngine::new();
+        assert_eq!(engine.validator_count(), 0);
+        
+        engine.add_validator(Box::new(RequiredValidator::new()));
+        assert_eq!(engine.validator_count(), 1);
+        
+        engine.add_validator(Box::new(MinLengthValidator::new(5)));
+        assert_eq!(engine.validator_count(), 2);
+    }
+}

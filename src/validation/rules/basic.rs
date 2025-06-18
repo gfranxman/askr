@@ -31,7 +31,7 @@ impl Validator for RequiredValidator {
                 self.custom_message.as_deref().unwrap_or("This field is required")
             )
         } else {
-            ValidationResult::success("required")
+            ValidationResult::success_with_priority("required", Priority::Critical)
         }
     }
     
@@ -266,5 +266,293 @@ impl Validator for PatternValidator {
     
     fn description(&self) -> &str {
         &self.pattern_str
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_required_validator_valid_input() {
+        let validator = RequiredValidator::new();
+        
+        let result = validator.validate("hello");
+        assert!(result.passed);
+        assert_eq!(result.rule_name, "required");
+        
+        let result = validator.validate("  hello  ");
+        assert!(result.passed);
+    }
+
+    #[test]
+    fn test_required_validator_invalid_input() {
+        let validator = RequiredValidator::new();
+        
+        let result = validator.validate("");
+        assert!(!result.passed);
+        assert_eq!(result.message.unwrap(), "This field is required");
+        assert_eq!(result.priority, Priority::Critical);
+        
+        let result = validator.validate("   ");
+        assert!(!result.passed);
+        
+        let result = validator.validate("\t\n  ");
+        assert!(!result.passed);
+    }
+
+    #[test]
+    fn test_required_validator_custom_message() {
+        let validator = RequiredValidator::with_message("Please enter a value");
+        
+        let result = validator.validate("");
+        assert!(!result.passed);
+        assert_eq!(result.message.unwrap(), "Please enter a value");
+    }
+
+    #[test]
+    fn test_required_validator_partial_validation() {
+        let validator = RequiredValidator::new();
+        
+        let result = validator.partial_validate("", 0);
+        assert_eq!(result.first_error_pos, Some(0));
+        
+        let result = validator.partial_validate("   ", 2);
+        assert_eq!(result.first_error_pos, Some(0));
+        
+        let result = validator.partial_validate("hello", 3);
+        assert!(result.first_error_pos.is_none());
+    }
+
+    #[test]
+    fn test_min_length_validator_valid_input() {
+        let validator = MinLengthValidator::new(5);
+        
+        let result = validator.validate("hello");
+        assert!(result.passed);
+        
+        let result = validator.validate("hello world");
+        assert!(result.passed);
+        
+        let result = validator.validate("12345");
+        assert!(result.passed);
+    }
+
+    #[test]
+    fn test_min_length_validator_invalid_input() {
+        let validator = MinLengthValidator::new(5);
+        
+        let result = validator.validate("hi");
+        assert!(!result.passed);
+        let message = result.message.unwrap();
+        assert!(message.contains("Minimum length is 5"));
+        assert!(message.contains("currently 2"));
+        
+        let result = validator.validate("");
+        assert!(!result.passed);
+        assert!(result.message.unwrap().contains("currently 0"));
+    }
+
+    #[test]
+    fn test_min_length_validator_custom_message() {
+        let validator = MinLengthValidator::new(3).with_message("Too short!");
+        
+        let result = validator.validate("hi");
+        assert!(!result.passed);
+        assert_eq!(result.message.unwrap(), "Too short!");
+    }
+
+    #[test]
+    fn test_min_length_validator_priority() {
+        let validator = MinLengthValidator::new(5).with_priority(Priority::Low);
+        
+        let result = validator.validate("hi");
+        assert!(!result.passed);
+        assert_eq!(result.priority, Priority::Low);
+    }
+
+    #[test]
+    fn test_min_length_validator_metadata() {
+        let validator = MinLengthValidator::new(5);
+        
+        let result = validator.validate("hi");
+        assert!(!result.passed);
+        
+        // Check metadata
+        assert_eq!(result.metadata.get("min_length").unwrap(), &serde_json::Value::Number(5.into()));
+        assert_eq!(result.metadata.get("actual_length").unwrap(), &serde_json::Value::Number(2.into()));
+    }
+
+    #[test]
+    fn test_max_length_validator_valid_input() {
+        let validator = MaxLengthValidator::new(5);
+        
+        let result = validator.validate("hello");
+        assert!(result.passed);
+        
+        let result = validator.validate("hi");
+        assert!(result.passed);
+        
+        let result = validator.validate("");
+        assert!(result.passed);
+    }
+
+    #[test]
+    fn test_max_length_validator_invalid_input() {
+        let validator = MaxLengthValidator::new(5);
+        
+        let result = validator.validate("hello world");
+        assert!(!result.passed);
+        let message = result.message.unwrap();
+        assert!(message.contains("Maximum length is 5"));
+        assert!(message.contains("currently 11"));
+    }
+
+    #[test]
+    fn test_max_length_validator_partial_validation() {
+        let validator = MaxLengthValidator::new(5);
+        
+        let result = validator.partial_validate("hello", 5);
+        assert!(result.first_error_pos.is_none());
+        
+        let result = validator.partial_validate("hello world", 8);
+        assert!(result.first_error_pos.is_some());
+        assert!(result.suggestion.is_some());
+        let suggestion = result.suggestion.unwrap();
+        assert!(suggestion.contains("Too long by"));
+    }
+
+    #[test]
+    fn test_pattern_validator_valid_input() {
+        let validator = PatternValidator::new(r"^\d{3}-\d{3}-\d{4}$").unwrap();
+        
+        let result = validator.validate("123-456-7890");
+        assert!(result.passed);
+        
+        let result = validator.validate("999-999-9999");
+        assert!(result.passed);
+    }
+
+    #[test]
+    fn test_pattern_validator_invalid_input() {
+        let validator = PatternValidator::new(r"^\d{3}-\d{3}-\d{4}$").unwrap();
+        
+        let result = validator.validate("123-45-6789");
+        assert!(!result.passed);
+        
+        let result = validator.validate("not-a-phone");
+        assert!(!result.passed);
+        
+        let result = validator.validate("1234567890");
+        assert!(!result.passed);
+    }
+
+    #[test]
+    fn test_pattern_validator_custom_message() {
+        let validator = PatternValidator::new(r"^\d+$")
+            .unwrap()
+            .with_message("Must contain only digits");
+        
+        let result = validator.validate("abc123");
+        assert!(!result.passed);
+        assert_eq!(result.message.unwrap(), "Must contain only digits");
+    }
+
+    #[test]
+    fn test_pattern_validator_metadata() {
+        let validator = PatternValidator::new(r"^\d+$").unwrap();
+        
+        let result = validator.validate("abc");
+        assert!(!result.passed);
+        
+        assert_eq!(result.metadata.get("pattern").unwrap(), &serde_json::Value::String(r"^\d+$".to_string()));
+    }
+
+    #[test]
+    fn test_unicode_handling() {
+        // Test with emojis
+        let min_validator = MinLengthValidator::new(3);
+        let result = min_validator.validate("👋🌍🚀");
+        assert!(result.passed);
+        
+        let max_validator = MaxLengthValidator::new(2);
+        let result = max_validator.validate("👋🌍🚀");
+        assert!(!result.passed);
+        
+        // Test with combining characters
+        let result = min_validator.validate("é́́"); // e + combining acute accent + combining acute accent
+        assert!(result.passed);
+        
+        // Test with various Unicode scripts
+        let result = min_validator.validate("こんにちは"); // Japanese
+        assert!(result.passed);
+        
+        let result = min_validator.validate("مرحبا"); // Arabic
+        assert!(result.passed);
+    }
+
+    #[test]
+    fn test_edge_cases() {
+        let min_validator = MinLengthValidator::new(0);
+        assert!(min_validator.validate("").passed);
+        assert!(min_validator.validate("anything").passed);
+        
+        let max_validator = MaxLengthValidator::new(0);
+        assert!(max_validator.validate("").passed);
+        assert!(!max_validator.validate("x").passed);
+    }
+
+    #[test]
+    fn test_pattern_validator_edge_cases() {
+        // Test empty pattern (matches empty string only)
+        let validator = PatternValidator::new("^$").unwrap();
+        assert!(validator.validate("").passed);
+        assert!(!validator.validate("anything").passed);
+        
+        // Test pattern that matches anything
+        let validator = PatternValidator::new(".*").unwrap();
+        assert!(validator.validate("").passed);
+        assert!(validator.validate("anything").passed);
+        
+        // Test complex Unicode pattern
+        let validator = PatternValidator::new(r"^[\p{L}\p{N}]+$").unwrap();
+        assert!(validator.validate("hello123").passed);
+        assert!(validator.validate("مرحبا123").passed);
+        assert!(!validator.validate("hello!").passed);
+    }
+
+    #[test]
+    fn test_invalid_regex_pattern() {
+        let result = PatternValidator::new("[");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validator_names() {
+        assert_eq!(RequiredValidator::new().name(), "required");
+        assert_eq!(MinLengthValidator::new(5).name(), "min_length");
+        assert_eq!(MaxLengthValidator::new(5).name(), "max_length");
+        assert_eq!(PatternValidator::new(r"\d+").unwrap().name(), "pattern");
+    }
+
+    #[test]
+    fn test_validator_priorities() {
+        assert_eq!(RequiredValidator::new().priority(), Priority::Critical);
+        assert_eq!(MinLengthValidator::new(5).priority(), Priority::Medium);
+        assert_eq!(MaxLengthValidator::new(5).priority(), Priority::Medium);
+        assert_eq!(PatternValidator::new(r"\d+").unwrap().priority(), Priority::High);
+    }
+
+    #[test]
+    fn test_chain_configuration() {
+        let validator = MinLengthValidator::new(5)
+            .with_priority(Priority::Low)
+            .with_message("Custom message");
+        
+        assert_eq!(validator.priority(), Priority::Low);
+        
+        let result = validator.validate("hi");
+        assert!(!result.passed);
+        assert_eq!(result.message.unwrap(), "Custom message");
     }
 }
