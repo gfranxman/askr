@@ -373,3 +373,43 @@ fn test_unicode_input() {
     assert_eq!(exit_code, 0);
     assert_eq!(stdout.trim(), "مرحبا こんにちは");
 }
+
+#[test]
+fn test_shell_completion_generation() {
+    // Test bash completion generation
+    let (exit_code, stdout, _stderr) = run_prompt(&["completion", "bash"]);
+    
+    assert_eq!(exit_code, 0);
+    assert!(stdout.contains("_prompt()"));
+    assert!(stdout.contains("--required"));
+    assert!(stdout.contains("--validate-email"));
+    assert!(stdout.contains("default json raw"));
+    
+    // Test zsh completion generation
+    let (exit_code, stdout, _stderr) = run_prompt(&["completion", "zsh"]);
+    
+    assert_eq!(exit_code, 0);
+    assert!(stdout.contains("#compdef prompt"));
+    assert!(stdout.contains("--output"));
+    
+    // Test fish completion generation
+    let (exit_code, stdout, _stderr) = run_prompt(&["completion", "fish"]);
+    
+    assert_eq!(exit_code, 0);
+    assert!(stdout.contains("__fish_prompt"));
+    
+    // Test PowerShell completion generation
+    let (exit_code, stdout, _stderr) = run_prompt(&["completion", "power-shell"]);
+    
+    assert_eq!(exit_code, 0);
+    assert!(stdout.len() > 0); // Should generate some completion script
+}
+
+#[test]
+fn test_completion_help() {
+    let (exit_code, stdout, _stderr) = run_prompt(&["completion", "--help"]);
+    
+    assert_eq!(exit_code, 0);
+    assert!(stdout.contains("Generate shell completion scripts"));
+    assert!(stdout.contains("bash, zsh, fish, power-shell"));
+}

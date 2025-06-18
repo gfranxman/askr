@@ -4,6 +4,7 @@
 
 ```bash
 prompt [OPTIONS] [PROMPT_TEXT]
+prompt completion <SHELL>  # Generate shell completion scripts
 ```
 
 ## Arguments
@@ -228,6 +229,80 @@ done
 - `3`: Maximum attempts exceeded
 - `130`: User interrupted (Ctrl+C)
 - `124`: Timeout exceeded
+
+## Shell Completion
+
+The `prompt` tool supports shell completion for all major shells to improve command-line usability and discoverability of options.
+
+### Installation
+
+Generate and install completion scripts for your shell:
+
+#### Bash
+```bash
+# Install for current user
+prompt completion bash > ~/.bash_completion.d/prompt
+source ~/.bash_completion.d/prompt
+
+# Or install system-wide (requires sudo)
+prompt completion bash | sudo tee /etc/bash_completion.d/prompt
+```
+
+#### Zsh
+```bash
+# Create completions directory if it doesn't exist
+mkdir -p ~/.zsh/completions
+
+# Install completion script
+prompt completion zsh > ~/.zsh/completions/_prompt
+
+# Add to .zshrc if not already present
+echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
+echo 'autoload -U compinit && compinit' >> ~/.zshrc
+```
+
+#### Fish
+```bash
+# Install completion script
+prompt completion fish > ~/.config/fish/completions/prompt.fish
+```
+
+#### PowerShell
+```powershell
+# Install completion script
+prompt completion powershell | Out-String | Invoke-Expression
+```
+
+### Features
+
+Shell completion provides:
+
+- **Flag completion**: All `--` flags and options
+- **Value completion**: Enum values like output formats (`default`, `json`, `raw`) and priorities (`critical`, `high`, `medium`, `low`)
+- **Subcommand completion**: `completion` subcommand and shell types
+- **Pattern hints**: Smart completion for regex patterns and date formats
+
+### Usage
+
+After installation, you can:
+
+```bash
+# Tab completion for flags
+prompt --<TAB>
+# Shows: --required --validate-email --output --quiet --min-length ...
+
+# Tab completion for output format values
+prompt --output <TAB>
+# Shows: default json raw
+
+# Tab completion for priority levels
+prompt --required-priority <TAB>
+# Shows: critical high medium low
+
+# Tab completion for shell types
+prompt completion <TAB>
+# Shows: bash zsh fish power-shell
+```
 
 ## Environment Variables
 

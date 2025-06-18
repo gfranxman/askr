@@ -1,4 +1,4 @@
-use clap::{Parser, ValueEnum};
+use clap::{Parser, ValueEnum, Subcommand, ValueHint};
 use crate::validation::Priority;
 
 #[derive(Parser, Debug)]
@@ -6,6 +6,33 @@ use crate::validation::Priority;
 #[command(about = "Interactive CLI prompt tool with real-time validation")]
 #[command(version = "0.1.0")]
 pub struct Args {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+    
+    #[command(flatten)]
+    pub prompt_args: PromptArgs,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum Commands {
+    /// Generate shell completion scripts
+    Completion {
+        /// The shell to generate completions for
+        #[arg(value_enum)]
+        shell: Shell,
+    },
+}
+
+#[derive(clap::ValueEnum, Clone, Debug)]
+pub enum Shell {
+    Bash,
+    Zsh,
+    Fish,
+    PowerShell,
+}
+
+#[derive(Parser, Debug)]
+pub struct PromptArgs {
     /// The text to display as the prompt
     pub prompt_text: Option<String>,
     
@@ -36,7 +63,7 @@ pub struct Args {
     pub min_length: Option<usize>,
     
     /// Custom regex pattern (can be used multiple times)
-    #[arg(long)]
+    #[arg(long, value_hint = ValueHint::Other)]
     pub pattern: Vec<String>,
     
     /// Custom error message for pattern validation (applies to most recent --pattern)
@@ -95,7 +122,7 @@ pub struct Args {
     pub date: bool,
     
     /// Expected date format (default: %Y-%m-%d)
-    #[arg(long)]
+    #[arg(long, value_hint = ValueHint::Other)]
     pub date_format: Option<String>,
     
     /// Accept time input
@@ -103,7 +130,7 @@ pub struct Args {
     pub time: bool,
     
     /// Expected time format (default: %H:%M:%S)
-    #[arg(long)]
+    #[arg(long, value_hint = ValueHint::Other)]
     pub time_format: Option<String>,
     
     /// Accept datetime input
@@ -111,7 +138,7 @@ pub struct Args {
     pub datetime: bool,
     
     /// Expected datetime format
-    #[arg(long)]
+    #[arg(long, value_hint = ValueHint::Other)]
     pub datetime_format: Option<String>,
     
     // Choice Validation

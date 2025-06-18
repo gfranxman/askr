@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::time::Duration;
-use super::args::{Args, OutputFormat};
+use super::args::{PromptArgs, OutputFormat};
 use crate::validation::{ValidationRuleConfig, ValidatorType, Priority};
 use crate::error::{PromptError, Result};
 
@@ -33,7 +33,7 @@ pub struct InteractionConfig {
 }
 
 impl PromptConfig {
-    pub fn from_args(args: Args) -> Result<Self> {
+    pub fn from_args(args: PromptArgs) -> Result<Self> {
         let validation_rules = Self::build_validation_rules(&args)?;
         
         Ok(Self {
@@ -57,7 +57,7 @@ impl PromptConfig {
         })
     }
     
-    fn build_validation_rules(args: &Args) -> Result<Vec<ValidationRuleConfig>> {
+    fn build_validation_rules(args: &PromptArgs) -> Result<Vec<ValidationRuleConfig>> {
         let mut rules = Vec::new();
         
         // Required validation

@@ -22,6 +22,7 @@ crossterm = "0.27"
 
 # CLI argument parsing
 clap = { version = "4.4", features = ["derive"] }
+clap_complete = "4.4"
 
 # Serialization for JSON output
 serde = { version = "1.0", features = ["derive"] }

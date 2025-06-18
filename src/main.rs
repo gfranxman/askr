@@ -5,8 +5,9 @@ mod output;
 mod ui;
 mod input;
 
-use clap::Parser;
-use cli::{Args, PromptConfig};
+use clap::{Parser, CommandFactory};
+use clap_complete::{generate, Shell as CompletionShell};
+use cli::{Args, PromptConfig, Commands, Shell};
 use error::{PromptError, Result};
 use validation::{ValidationEngine, ValidatorType};
 use validation::rules::{RequiredValidator, MinLengthValidator, MaxLengthValidator, PatternValidator, EmailValidator, HostnameValidator, UrlValidator, Ipv4Validator, Ipv6Validator, IntegerValidator, FloatValidator, RangeValidator, PositiveValidator, NegativeValidator, ChoiceValidator, DateValidator, TimeValidator, DateTimeValidator, FileExistsValidator, DirExistsValidator, PathExistsValidator, ReadableValidator, WritableValidator, ExecutableValidator};
@@ -23,7 +24,14 @@ fn main() {
 
 fn run() -> Result<()> {
     let args = Args::parse();
-    let config = PromptConfig::from_args(args)?;
+    
+    // Handle completion subcommand
+    if let Some(Commands::Completion { shell }) = args.command {
+        generate_completion(shell);
+        return Ok(());
+    }
+    
+    let config = PromptConfig::from_args(args.prompt_args)?;
     
     // Get input based on mode
     let input = if config.quiet_mode {
@@ -362,4 +370,16 @@ fn prompt_simple(prompt_text: &str) -> Result<String> {
     io::stdin().read_line(&mut input)?;
     
     Ok(input.trim().to_string())
+}
+
+fn generate_completion(shell: Shell) {
+    let mut cmd = Args::command();
+    let shell = match shell {
+        Shell::Bash => CompletionShell::Bash,
+        Shell::Zsh => CompletionShell::Zsh,
+        Shell::Fish => CompletionShell::Fish,
+        Shell::PowerShell => CompletionShell::PowerShell,
+    };
+    
+    generate(shell, &mut cmd, "prompt", &mut std::io::stdout());
 }
