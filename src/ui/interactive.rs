@@ -1,8 +1,8 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::io::{self, stderr};
 use std::time::Duration;
-use super::{Terminal, ColorScheme, Colorizer, LayoutManager, Screen};
-use crate::validation::ValidationEngine;
+use super::{Terminal, ColorScheme, Colorizer, LayoutManager, Screen, ChoiceMenu};
+use crate::validation::{ValidationEngine, ValidatorType};
 use crate::cli::config::{PromptConfig, InteractionConfig};
 use crate::error::{PromptError, Result};
 
@@ -28,6 +28,11 @@ impl InteractivePrompt {
     
     pub fn prompt(&mut self) -> Result<String> {
         let prompt_text = self.config.prompt_text.as_deref().unwrap_or("Enter input:").to_string();
+        
+        // Check if we have choice validation - if so, use choice menu
+        if let Some(choice_config) = self.find_choice_validator() {
+            return self.prompt_with_choice_menu(&prompt_text, choice_config);
+        }
         let has_help = self.config.ui_config.help_text.is_some();
         
         // Set up UI components
@@ -377,6 +382,50 @@ impl InteractivePrompt {
         
         Ok(())
     }
+    
+    fn find_choice_validator(&self) -> Option<ChoiceConfig> {
+        for rule_config in &self.config.validation_rules {
+            if let ValidatorType::Choices(choices) = &rule_config.validator_type {
+                let min_choices = rule_config.parameters.get("min_choices")
+                    .and_then(|s| s.parse::<usize>().ok())
+                    .unwrap_or(1);
+                let max_choices = rule_config.parameters.get("max_choices")
+                    .and_then(|s| s.parse::<usize>().ok())
+                    .unwrap_or(1);
+                
+                return Some(ChoiceConfig {
+                    choices: choices.clone(),
+                    allow_multiple: max_choices > 1,
+                });
+            }
+        }
+        None
+    }
+    
+    fn prompt_with_choice_menu(&mut self, prompt_text: &str, choice_config: ChoiceConfig) -> Result<String> {
+        // Create a new terminal instance for the choice menu
+        let terminal = Terminal::new()?;
+        let mut choice_menu = ChoiceMenu::new(
+            terminal,
+            choice_config.choices,
+            choice_config.allow_multiple,
+            self.config.ui_config.no_color,
+        )?;
+        
+        let selected_choices = choice_menu.show(prompt_text)?;
+        
+        if choice_config.allow_multiple {
+            Ok(selected_choices.join(","))
+        } else {
+            Ok(selected_choices.into_iter().next().unwrap_or_default())
+        }
+    }
+}
+
+#[derive(Debug)]
+struct ChoiceConfig {
+    choices: Vec<String>,
+    allow_multiple: bool,
 }
 
 impl Drop for InteractivePrompt {

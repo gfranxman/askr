@@ -254,6 +254,20 @@ impl<W: Write + ExecutableCommand> Screen<W> {
         Ok(())
     }
     
+    pub fn write_choice(&mut self, choice_text: &str) -> io::Result<()> {
+        let colored_choice = self.colorizer.valid_text(choice_text);
+        self.colorizer.write_colored(&mut self.writer, &colored_choice)?;
+        self.writer.execute(MoveToNextLine(1))?;
+        Ok(())
+    }
+    
+    pub fn write_highlighted_choice(&mut self, choice_text: &str) -> io::Result<()> {
+        let colored_choice = self.colorizer.highlighted_text(choice_text);
+        self.colorizer.write_colored(&mut self.writer, &colored_choice)?;
+        self.writer.execute(MoveToNextLine(1))?;
+        Ok(())
+    }
+    
     pub fn flush(&mut self) -> io::Result<()> {
         self.writer.flush()
     }

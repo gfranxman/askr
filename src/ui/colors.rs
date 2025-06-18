@@ -97,6 +97,7 @@ impl ColoredText {
     }
 }
 
+#[derive(Clone)]
 pub struct Colorizer {
     scheme: ColorScheme,
     no_color: bool,
@@ -146,6 +147,10 @@ impl Colorizer {
     
     pub fn help_text(&self, text: impl Into<String>) -> ColoredText {
         ColoredText::new(text, self.scheme.help_text)
+    }
+    
+    pub fn highlighted_text(&self, text: impl Into<String>) -> ColoredText {
+        ColoredText::new(text, Color::Black).with_background(Color::White).bold()
     }
     
     pub fn error_message(&self, text: impl Into<String>) -> ColoredText {
