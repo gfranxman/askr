@@ -2,10 +2,30 @@
 
 ## Interactive Mode Layout
 
+### Smart Prompt Placement
+
+The prompt intelligently reserves screen space to provide a stable UI experience, especially when used in scripts with existing terminal output.
+
+#### Space Reservation Algorithm
+1. **Calculate required space**: Analyze all validators to determine maximum possible error messages
+2. **Account for text wrapping**: Calculate line wrapping based on terminal width  
+3. **Reserve terminal lines**: Print blank lines to claim screen real estate
+4. **Position prompt**: Move cursor back up to reserved prompt position
+5. **Stable display**: All validation content appears within reserved space
+
+#### Benefits
+- **Script-friendly**: Previous terminal content remains visible
+- **No scrolling**: All errors visible simultaneously without pushing content off-screen
+- **Predictable**: Consistent UI behavior regardless of terminal scroll position
+- **Professional**: Stable, polished interaction suitable for production scripts
+
 ### Basic Layout Structure
 ```
+[Previous script output remains visible]
+[Reserved space - calculated based on validators]
+↑ Cursor positioned here ↑
 [PROMPT_TEXT] [USER_INPUT]█
-[ERROR_AREA - Dynamic Height]
+[ERROR_AREA - Dynamic Height within reserved space]
 [HELP_TEXT - Optional]
 ```
 
@@ -122,11 +142,20 @@ impl TerminalUI {
 #### Special Keys
 - **Enter**: Submit input (validate and return/continue)
 - **Ctrl+C**: Cancel input, exit with code 130
-- **Ctrl+D**: EOF, exit with code 1
-- **Backspace/Delete**: Remove character, revalidate
-- **Arrow keys**: Cursor movement within input
+- **Ctrl+D**: EOF, exit with code 1 (only when input is empty)
+- **Backspace**: Remove character before cursor, revalidate
+- **Delete**: Remove character at cursor, revalidate
+- **Arrow keys**: Left/Right cursor movement within input
 - **Home/End**: Jump to beginning/end of input
 - **Tab**: Auto-completion for choice validators (if applicable)
+
+#### Enhanced Line Editing (Emacs-style)
+- **Ctrl+A**: Jump to beginning of line
+- **Ctrl+E**: Jump to end of line
+- **Ctrl+K**: Kill (delete) from cursor to end of line
+- **Ctrl+U**: Kill from beginning of line to cursor
+- **Ctrl+W**: Delete word before cursor
+- **Insert mode**: Characters inserted at cursor position (not appended)
 
 #### Paste Handling
 - **Large pastes**: Handle efficiently without lag
@@ -136,10 +165,12 @@ impl TerminalUI {
 ### Navigation and Editing
 
 #### Cursor Movement
-- **Left/Right arrows**: Move cursor within input
-- **Home/End**: Jump to start/end
-- **Ctrl+Left/Right**: Word-wise movement
-- **Visual feedback**: Cursor position affects validation coloring
+- **Left/Right arrows**: Move cursor within input (character-wise)
+- **Home/End**: Jump to start/end of line
+- **Ctrl+A/Ctrl+E**: Alternative jump to start/end (Emacs-style)
+- **Unicode-aware**: Properly handles multi-byte characters
+- **Visual feedback**: Cursor positioned exactly where expected
+- **Real-time validation**: Validation updates as cursor moves
 
 #### Text Selection
 - **Shift+Arrows**: Select text

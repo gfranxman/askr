@@ -27,10 +27,11 @@ impl InteractivePrompt {
     }
     
     pub fn prompt(&mut self) -> Result<String> {
-        let prompt_text = self.config.prompt_text.as_deref().unwrap_or("Enter input:");
+        let prompt_text = self.config.prompt_text.as_deref().unwrap_or("Enter input:").to_string();
+        let has_help = self.config.ui_config.help_text.is_some();
         
         // Set up UI components
-        let capabilities = self.terminal.capabilities().clone();
+        let _capabilities = self.terminal.capabilities().clone();
         let (width, height) = self.terminal.size()?;
         
         let color_scheme = if self.config.ui_config.no_color {
@@ -40,14 +41,21 @@ impl InteractivePrompt {
         };
         
         let colorizer = Colorizer::new(color_scheme, self.config.ui_config.no_color);
+        
+        // Calculate space needed and reserve it
+        let reserved_lines = self.calculate_and_reserve_space(width, &prompt_text)?;
+        
         let layout = LayoutManager::new(width, height);
         let mut screen = Screen::new(stderr(), layout, colorizer);
         
-        // Calculate layout
-        screen.layout_mut().calculate_layout(self.config.ui_config.help_text.is_some());
+        // Calculate layout with reserved space context
+        screen.layout_mut().calculate_layout(has_help);
+        
+        // Move cursor to the reserved prompt position
+        self.move_to_prompt_position(reserved_lines)?;
         
         // Draw initial screen
-        let prompt_width = screen.write_prompt(prompt_text)?;
+        let prompt_width = screen.write_prompt(&prompt_text)?;
         
         if let Some(help_text) = &self.config.ui_config.help_text {
             screen.write_help(help_text)?;
@@ -74,8 +82,8 @@ impl InteractivePrompt {
                 if let Event::Key(key_event) = event::read()? {
                     match self.handle_key_event(key_event, &mut input, &mut cursor_pos, &mut screen, prompt_width)? {
                         InputAction::Continue => {
-                            // Validate and update display
-                            self.update_validation_display(&input, &mut screen)?;
+                            // Validate and update display, then reposition cursor
+                            self.update_validation_display(&input, &mut screen, cursor_pos, prompt_width)?;
                         }
                         InputAction::Submit => {
                             // Final validation
@@ -88,7 +96,7 @@ impl InteractivePrompt {
                                     return Err(PromptError::MaxAttemptsExceeded);
                                 }
                                 // Show errors and continue
-                                self.update_validation_display(&input, &mut screen)?;
+                                self.update_validation_display(&input, &mut screen, cursor_pos, prompt_width)?;
                             }
                         }
                         InputAction::Cancel => {
@@ -271,16 +279,99 @@ impl InteractivePrompt {
         Ok(())
     }
     
-    fn update_validation_display(&self, input: &str, screen: &mut Screen<io::Stderr>) -> Result<()> {
+    fn calculate_and_reserve_space(&self, width: u16, _prompt_text: &str) -> Result<u16> {
+        use std::io::{self, Write};
+        
+        // Get all potential error messages
+        let messages = self.validation_engine.get_potential_error_messages();
+        
+        // Calculate lines needed for each component
+        let mut total_lines = 0u16;
+        
+        // 1. Prompt line (always 1 line)
+        total_lines += 1;
+        
+        // 2. Error messages (with text wrapping)
+        for message in &messages {
+            let wrapped_lines = self.calculate_wrapped_lines(message, width);
+            total_lines += wrapped_lines;
+        }
+        
+        // 3. Help text if present
+        if let Some(help_text) = &self.config.ui_config.help_text {
+            let wrapped_lines = self.calculate_wrapped_lines(help_text, width);
+            total_lines += wrapped_lines;
+        }
+        
+        // 4. Add some buffer for dynamic content and spacing
+        total_lines += 3;
+        
+        // Ensure we don't try to reserve more lines than the terminal height
+        let (_, terminal_height) = self.terminal.size()?;
+        let max_reservable = terminal_height.saturating_sub(2); // Leave room for prompt
+        total_lines = total_lines.min(max_reservable);
+        
+        // Print blank lines to reserve the space
+        let mut stderr = io::stderr();
+        for _ in 0..total_lines {
+            writeln!(stderr)?;
+        }
+        stderr.flush()?;
+        
+        Ok(total_lines)
+    }
+    
+    fn calculate_wrapped_lines(&self, text: &str, width: u16) -> u16 {
+        if text.is_empty() || width == 0 {
+            return 0;
+        }
+        
+        let max_width = width as usize;
+        let mut lines = 0u16;
+        let mut current_line_width = 0;
+        
+        for word in text.split_whitespace() {
+            let word_len = word.len();
+            
+            if current_line_width + word_len + 1 <= max_width || current_line_width == 0 {
+                if current_line_width > 0 {
+                    current_line_width += 1; // space
+                }
+                current_line_width += word_len;
+            } else {
+                lines += 1;
+                current_line_width = word_len;
+            }
+        }
+        
+        if current_line_width > 0 {
+            lines += 1;
+        }
+        
+        lines.max(1) // At least 1 line for any non-empty text
+    }
+    
+    fn move_to_prompt_position(&mut self, reserved_lines: u16) -> Result<()> {
+        use crossterm::{cursor::MoveUp, ExecutableCommand};
+        use std::io::stderr;
+        
+        // Move cursor back up to where we want to start the prompt
+        stderr().execute(MoveUp(reserved_lines))?;
+        
+        Ok(())
+    }
+    
+    fn update_validation_display(&self, input: &str, screen: &mut Screen<io::Stderr>, cursor_pos: usize, prompt_width: u16) -> Result<()> {
         if !self.config.interaction_config.mask_input {
             // Get validation results
             let errors = self.validation_engine.get_display_errors(input, Some(10));
             
-            // Get first error position for text coloring
-            let partial_result = self.validation_engine.partial_validate(input, input.len());
-            
-            // Update screen
+            // Write errors below the input (this handles cursor positioning internally)
             screen.write_errors(&errors)?;
+            
+            // Position cursor at the correct input position after error display
+            screen.position_cursor_at_input_pos(input, cursor_pos, prompt_width)?;
+            
             screen.flush()?;
         }
         

@@ -155,6 +155,7 @@ pub struct InteractiveTerminal {
     cursor_pos: usize,
     error_area_height: u16,
     capabilities: TerminalCapabilities,
+    reserved_lines: u16, // Smart prompt placement
 }
 
 #[derive(Debug)]
@@ -164,6 +165,68 @@ pub struct TerminalCapabilities {
     pub unicode_support: bool,
     pub width: u16,
     pub height: u16,
+}
+```
+
+#### Smart Prompt Placement
+```rust
+impl InteractivePrompt {
+    fn calculate_and_reserve_space(&self, width: u16, prompt_text: &str) -> Result<u16> {
+        // Get all potential error messages by testing validators
+        let messages = self.validation_engine.get_potential_error_messages();
+        
+        // Calculate space needed including text wrapping
+        let mut total_lines = 1; // prompt line
+        for message in &messages {
+            total_lines += self.calculate_wrapped_lines(message, width);
+        }
+        
+        // Reserve space and position cursor
+        self.print_blank_lines(total_lines)?;
+        self.move_cursor_up(total_lines)?;
+        Ok(total_lines)
+    }
+    
+    fn get_potential_error_messages(&self) -> Vec<String> {
+        // Test validators with various inputs to discover all possible errors
+        // This enables accurate space calculation before user interaction
+    }
+}
+```
+
+#### Enhanced Line Editing
+```rust
+impl KeyEventHandler {
+    fn handle_emacs_shortcuts(&mut self, key: KeyEvent) -> InputAction {
+        match key {
+            // Ctrl+A: Jump to beginning
+            KeyEvent { code: KeyCode::Char('a'), modifiers: KeyModifiers::CONTROL, .. } => {
+                self.cursor_pos = 0;
+                InputAction::Continue
+            }
+            // Ctrl+E: Jump to end
+            KeyEvent { code: KeyCode::Char('e'), modifiers: KeyModifiers::CONTROL, .. } => {
+                self.cursor_pos = self.input.chars().count();
+                InputAction::Continue
+            }
+            // Ctrl+K: Kill to end of line
+            KeyEvent { code: KeyCode::Char('k'), modifiers: KeyModifiers::CONTROL, .. } => {
+                self.kill_to_end();
+                InputAction::Continue
+            }
+            // Ctrl+U: Kill to beginning of line
+            KeyEvent { code: KeyCode::Char('u'), modifiers: KeyModifiers::CONTROL, .. } => {
+                self.kill_to_beginning();
+                InputAction::Continue
+            }
+            // Ctrl+W: Delete word backward
+            KeyEvent { code: KeyCode::Char('w'), modifiers: KeyModifiers::CONTROL, .. } => {
+                self.delete_word_backward();
+                InputAction::Continue
+            }
+            _ => self.handle_regular_key(key)
+        }
+    }
 }
 ```
 

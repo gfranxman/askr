@@ -149,7 +149,16 @@ impl<W: Write + ExecutableCommand> Screen<W> {
     }
     
     pub fn write_prompt(&mut self, prompt_text: &str) -> io::Result<u16> {
-        let (x, y) = self.layout.prompt_position();
+        let colored_prompt = self.colorizer.prompt_text(format!("{} ", prompt_text));
+        
+        // Write at current cursor position instead of using layout position
+        self.colorizer.write_colored(&mut self.writer, &colored_prompt)?;
+        
+        // Return the width of the prompt for cursor positioning
+        Ok((prompt_text.len() + 1) as u16)
+    }
+    
+    pub fn write_prompt_at(&mut self, prompt_text: &str, x: u16, y: u16) -> io::Result<u16> {
         let colored_prompt = self.colorizer.prompt_text(format!("{} ", prompt_text));
         
         self.write_at(x, y, &colored_prompt)?;
@@ -159,8 +168,8 @@ impl<W: Write + ExecutableCommand> Screen<W> {
     }
     
     pub fn write_input(&mut self, input: &str, prompt_width: u16, error_pos: Option<usize>) -> io::Result<()> {
-        let (x, y) = self.layout.input_position(prompt_width);
-        self.move_to(x, y)?;
+        // Clear from current position to end of line, then write input
+        self.writer.execute(crossterm::cursor::MoveToColumn(prompt_width))?;
         self.clear_from_cursor()?;
         
         if let Some(error_pos) = error_pos {
@@ -186,20 +195,17 @@ impl<W: Write + ExecutableCommand> Screen<W> {
     }
     
     pub fn write_errors(&mut self, errors: &[ValidationResult]) -> io::Result<()> {
-        let (start_line, max_height, max_width) = self.layout.error_area_bounds();
+        // Store current cursor position to return to later
+        self.writer.execute(crossterm::cursor::SavePosition)?;
         
-        // Clear the error area first
-        for i in 0..max_height {
-            self.move_to(0, start_line + i)?;
-            self.clear_line()?;
-        }
+        // Move to the line after the prompt/input for error display
+        self.writer.execute(crossterm::cursor::MoveToNextLine(1))?;
         
-        // Update layout with actual error count
-        self.layout.update_error_area_height(errors.len());
+        // Clear from cursor down to clear any old errors
+        self.clear_from_cursor()?;
         
-        // Write each error
-        let mut line = start_line;
-        for error in errors.iter().take(max_height as usize) {
+        // Write each error on the following lines
+        for error in errors.iter().take(10) { // Limit to 10 errors max
             if let Some(message) = &error.message {
                 let colored_error = match error.priority {
                     Priority::Critical | Priority::High => self.colorizer.error_message(message),
@@ -208,19 +214,18 @@ impl<W: Write + ExecutableCommand> Screen<W> {
                 };
                 
                 // Handle text wrapping
-                let wrapped_lines = self.layout.wrap_text(&colored_error.text, max_width);
+                let wrapped_lines = self.layout.wrap_text(&colored_error.text, self.layout.width);
                 
                 for wrapped_line in wrapped_lines {
-                    if line >= start_line + max_height {
-                        break;
-                    }
-                    
                     let wrapped_colored = ColoredText::new(wrapped_line, colored_error.color);
-                    self.write_at(0, line, &wrapped_colored)?;
-                    line += 1;
+                    self.colorizer.write_colored(&mut self.writer, &wrapped_colored)?;
+                    self.writer.execute(crossterm::cursor::MoveToNextLine(1))?;
                 }
             }
         }
+        
+        // Restore cursor to original position (the input line)
+        self.writer.execute(crossterm::cursor::RestorePosition)?;
         
         Ok(())
     }
@@ -244,8 +249,8 @@ impl<W: Write + ExecutableCommand> Screen<W> {
         let chars: Vec<char> = input.chars().collect();
         let text_before_cursor: String = chars.iter().take(cursor_pos).collect();
         let cursor_x = prompt_width + text_before_cursor.width() as u16;
-        let (_, y) = self.layout.input_position(prompt_width);
-        self.move_to(cursor_x, y)?;
+        // Move to the correct column on the current line
+        self.writer.execute(MoveToColumn(cursor_x))?;
         Ok(())
     }
     

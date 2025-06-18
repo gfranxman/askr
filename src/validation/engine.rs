@@ -174,6 +174,41 @@ impl ValidationEngine {
     pub fn validator_count(&self) -> usize {
         self.validators.len()
     }
+    
+    /// Get all potential error messages to calculate display space needed
+    pub fn get_potential_error_messages(&self) -> Vec<String> {
+        let mut messages = Vec::new();
+        
+        // Get default error messages from each validator by testing with invalid input
+        for validator in &self.validators {
+            // Try various test inputs to trigger different error conditions
+            let test_inputs = vec![
+                "", // Empty input
+                "x", // Minimal input  
+                "this is a very long input string that will likely fail most validators and show their error messages",
+                "invalid-format-123!@#", // Invalid format
+            ];
+            
+            for test_input in test_inputs {
+                let result = validator.validate(test_input);
+                if !result.passed {
+                    if let Some(message) = &result.message {
+                        if !messages.contains(message) {
+                            messages.push(message.clone());
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Add some buffer for dynamic messages
+        if !messages.is_empty() {
+            // Add a few generic buffer messages for dynamic content
+            messages.push("Additional validation context may appear here".to_string());
+        }
+        
+        messages
+    }
 }
 
 impl Default for ValidationEngine {
