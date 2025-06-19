@@ -1,7 +1,5 @@
 use super::{PartialValidationResult, Priority, ValidationResult, ValidationSummary, Validator};
-use crate::error::Result;
 use dashmap::DashMap;
-use std::collections::HashMap;
 use std::time::Instant;
 
 /// Main validation engine that orchestrates multiple validators

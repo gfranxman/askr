@@ -6,6 +6,6 @@ pub mod quiet;
 pub mod terminal;
 
 pub use choice_menu::ChoiceMenu;
-pub use colors::{ColorScheme, ColoredText, Colorizer};
+pub use colors::{ColorScheme, Colorizer};
 pub use layout::{LayoutManager, Screen};
-pub use terminal::{Terminal, TerminalCapabilities, UIMode};
+pub use terminal::Terminal;

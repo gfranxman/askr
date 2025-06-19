@@ -7,7 +7,6 @@ pub use engine::ValidationEngine;
 pub use priority::Priority;
 pub use result::{PartialValidationResult, ValidationResult, ValidationSummary};
 
-use crate::error::Result;
 
 /// Core trait for all validators
 pub trait Validator: Send + Sync {

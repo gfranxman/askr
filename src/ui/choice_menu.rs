@@ -1,7 +1,7 @@
 use super::{ColorScheme, Colorizer, LayoutManager, Screen, Terminal};
 use crate::error::{PromptError, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
-use std::io::{self, stderr, Write};
+use std::io::{self, stderr};
 use std::time::Duration;
 
 pub struct ChoiceMenu {
@@ -176,7 +176,7 @@ impl ChoiceMenu {
 
     fn clear_and_redraw(&self, screen: &mut Screen<io::Stderr>, prompt_text: &str) -> Result<()> {
         use crossterm::{
-            cursor::{MoveTo, MoveUp},
+            cursor::MoveUp,
             terminal::Clear,
             terminal::ClearType,
             ExecutableCommand,
@@ -222,12 +222,10 @@ impl ChoiceMenu {
                 } else {
                     "[ ]"
                 }
+            } else if is_current {
+                ">"
             } else {
-                if is_current {
-                    ">"
-                } else {
-                    " "
-                }
+                " "
             };
 
             let choice_text = format!("{} {}", marker, choice);

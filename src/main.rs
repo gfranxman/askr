@@ -11,7 +11,7 @@ use cli::{Args, Commands, PromptConfig, Shell};
 use error::{PromptError, Result};
 use output::{DefaultFormatter, JsonFormatter, OutputFormatter, RawFormatter};
 use ui::interactive::InteractivePrompt;
-use ui::{Terminal, TerminalCapabilities};
+use ui::Terminal;
 use validation::rules::{
     ChoiceValidator, DateTimeValidator, DateValidator, DirExistsValidator, EmailValidator,
     ExecutableValidator, FileExistsValidator, FloatValidator, HostnameValidator, IntegerValidator,

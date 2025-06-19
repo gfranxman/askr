@@ -1,5 +1,4 @@
 use super::super::{PartialValidationResult, Priority, ValidationResult, Validator};
-use std::str::FromStr;
 
 /// Integer validator
 #[derive(Debug)]

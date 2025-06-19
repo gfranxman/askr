@@ -1,5 +1,4 @@
 use super::super::{PartialValidationResult, Priority, ValidationResult, Validator};
-use once_cell::sync::Lazy;
 use regex::Regex;
 
 /// Validator that ensures input is not empty

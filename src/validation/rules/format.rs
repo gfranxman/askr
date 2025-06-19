@@ -1,7 +1,7 @@
 use super::super::{PartialValidationResult, Priority, ValidationResult, Validator};
 use once_cell::sync::Lazy;
 use regex::Regex;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 // Email validation regex - comprehensive RFC-compliant pattern
 static EMAIL_REGEX: Lazy<Regex> = Lazy::new(|| {

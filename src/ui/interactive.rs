@@ -1,5 +1,5 @@
 use super::{ChoiceMenu, ColorScheme, Colorizer, LayoutManager, Screen, Terminal};
-use crate::cli::config::{InteractionConfig, PromptConfig};
+use crate::cli::config::PromptConfig;
 use crate::error::{PromptError, Result};
 use crate::validation::{ValidationEngine, ValidatorType};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
@@ -440,7 +440,7 @@ impl InteractivePrompt {
         for word in text.split_whitespace() {
             let word_len = word.len();
 
-            if current_line_width + word_len + 1 <= max_width || current_line_width == 0 {
+            if current_line_width + word_len < max_width || current_line_width == 0 {
                 if current_line_width > 0 {
                     current_line_width += 1; // space
                 }

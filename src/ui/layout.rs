@@ -72,7 +72,7 @@ impl LayoutManager {
             let word_width = word.width();
             let current_width = current_line.width();
 
-            if current_width + word_width + 1 <= max_width || current_line.is_empty() {
+            if current_width + word_width < max_width || current_line.is_empty() {
                 if !current_line.is_empty() {
                     current_line.push(' ');
                 }

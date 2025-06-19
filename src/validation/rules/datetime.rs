@@ -1,5 +1,5 @@
 use super::super::{PartialValidationResult, Priority, ValidationResult, Validator};
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime};
 
 /// Date validator with configurable format
 #[derive(Debug)]

@@ -1,6 +1,6 @@
 use super::args::{OutputFormat, PromptArgs};
 use crate::error::{PromptError, Result};
-use crate::validation::{Priority, ValidationRuleConfig, ValidatorType};
+use crate::validation::{ValidationRuleConfig, ValidatorType};
 use std::collections::HashMap;
 use std::time::Duration;
 
