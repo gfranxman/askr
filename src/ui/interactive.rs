@@ -540,6 +540,12 @@ impl InteractivePrompt {
     ) -> Result<String> {
         // Create a new terminal instance for the choice menu
         let terminal = Terminal::new()?;
+        let timeout = self
+            .config
+            .interaction_config
+            .timeout
+            .unwrap_or(Duration::from_secs(300));
+        
         let mut choice_menu = ChoiceMenu::new(
             terminal,
             choice_config.choices,
@@ -547,6 +553,7 @@ impl InteractivePrompt {
             choice_config.min_choices,
             choice_config.max_choices,
             self.config.ui_config.no_color,
+            timeout,
         )?;
 
         let selected_choices = choice_menu.show(prompt_text)?;

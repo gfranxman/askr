@@ -15,6 +15,7 @@ pub struct ChoiceMenu {
     colorizer: Colorizer,
     validation_error: Option<String>,
     last_content_lines: u16, // Track how many content lines were drawn last time
+    timeout: Duration,
 }
 
 impl ChoiceMenu {
@@ -25,6 +26,7 @@ impl ChoiceMenu {
         min_choices: usize,
         max_choices: usize,
         no_color: bool,
+        timeout: Duration,
     ) -> Result<Self> {
         // Only enter raw mode if we have cursor control
         if terminal.capabilities().cursor_control {
@@ -51,6 +53,7 @@ impl ChoiceMenu {
             colorizer,
             validation_error: None,
             last_content_lines: 0,
+            timeout,
         })
     }
 
@@ -80,8 +83,7 @@ impl ChoiceMenu {
         loop {
             screen.flush()?;
 
-            let timeout = Duration::from_secs(300);
-            if event::poll(timeout)? {
+            if event::poll(self.timeout)? {
                 if let Event::Key(key_event) = event::read()? {
                     match self.handle_key_event(key_event)? {
                         MenuAction::Continue => {
