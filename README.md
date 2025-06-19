@@ -275,6 +275,28 @@ cargo build
 cargo test
 ```
 
+### Pre-commit Hooks
+
+This project uses pre-commit hooks to ensure code quality. To set up pre-commit hooks:
+
+```bash
+# Install pre-commit (if you don't have it)
+pip install pre-commit
+
+# Install the git hook scripts
+pre-commit install
+
+# (Optional) run against all files
+pre-commit run --all-files
+```
+
+The pre-commit configuration includes:
+- **Rust formatting** with `cargo fmt`
+- **Focused linting** with `cargo clippy` (unused imports, style issues)
+- **Compilation checks** with `cargo check`
+- **Test execution** with `cargo test`
+- **Basic file checks** (trailing whitespace, file endings, etc.)
+
 ## 📄 License
 
 This project is licensed under either of
