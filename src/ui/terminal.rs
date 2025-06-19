@@ -37,7 +37,7 @@ impl TerminalCapabilities {
             unicode_support: true,  // Assume unicode support
             width,
             height,
-            supports_alternate_screen: true,
+            supports_alternate_screen: false, // We don't use alternate screen mode
         })
     }
 
