@@ -244,14 +244,20 @@ impl PromptConfig {
                 "case_sensitive".to_string(),
                 args.choices_case_sensitive.to_string(),
             );
-            parameters.insert(
-                "min_choices".to_string(),
-                args.min_choices.unwrap_or(1).to_string(),
-            );
-            parameters.insert(
-                "max_choices".to_string(),
-                args.max_choices.unwrap_or(1).to_string(),
-            );
+            
+            let min_choices = args.min_choices.unwrap_or(1);
+            let max_choices = args.max_choices.unwrap_or_else(|| {
+                if args.min_choices.is_some() {
+                    // If min_choices is specified, default max_choices to all available choices
+                    choices.len()
+                } else {
+                    // If neither is specified, default to single selection
+                    1
+                }
+            });
+            
+            parameters.insert("min_choices".to_string(), min_choices.to_string());
+            parameters.insert("max_choices".to_string(), max_choices.to_string());
             parameters.insert(
                 "selection_separator".to_string(),
                 args.selection_separator.as_deref().unwrap_or(",").to_string(),

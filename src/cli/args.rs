@@ -182,7 +182,7 @@ pub struct PromptArgs {
     #[arg(long)]
     pub min_choices: Option<usize>,
 
-    /// Maximum number of choices allowed (default: 1)
+    /// Maximum number of choices allowed (default: 1, or total choices if min_choices is specified)
     #[arg(long)]
     pub max_choices: Option<usize>,
 

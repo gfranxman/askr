@@ -67,7 +67,7 @@ prompt completion <SHELL>  # Generate shell completion scripts
 - `--selection-separator <SEP>`: Custom separator for joining multiple selections in output (default: comma)
 - `--choices-case-sensitive`: Make choice matching case-sensitive
 - `--min-choices <N>`: Minimum number of choices required (default: 1)
-- `--max-choices <N>`: Maximum number of choices allowed (default: 1)
+- `--max-choices <N>`: Maximum number of choices allowed (default: 1, or total choices if min_choices is specified)
 
 ### File System Validation
 
