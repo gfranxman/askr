@@ -339,7 +339,6 @@ mod tests {
         let summary = engine.validate("test");
 
         // Should record timing metadata
-        assert!(summary.metadata.validation_time_ms >= 0);
         assert!(summary.metadata.validation_time_ms < 1000); // Should be very fast
     }
 

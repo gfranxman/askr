@@ -392,5 +392,5 @@ fn generate_completion(shell: Shell) {
         Shell::PowerShell => CompletionShell::PowerShell,
     };
 
-    generate(shell, &mut cmd, "prompt", &mut std::io::stdout());
+    generate(shell, &mut cmd, "askr", &mut std::io::stdout());
 }
