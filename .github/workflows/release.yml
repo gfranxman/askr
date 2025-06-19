@@ -85,6 +85,8 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         files: ./${{ matrix.asset_name }}
+        append_body: false
+        generate_release_notes: false
 
   publish-crate:
     name: Publish to crates.io
