@@ -93,14 +93,37 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Wait for CI workflow to complete
-      uses: lewagon/wait-on-check-action@v1.3.1
-      with:
-        ref: ${{ github.ref }}
-        check-name: CI
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        wait-interval: 10
-        allowed-conclusions: success
-        verbose: true
+      run: |
+        echo "Waiting for CI workflow to complete..."
+        sleep 30
+        
+        # Check if CI workflow completed successfully using gh CLI
+        MAX_ATTEMPTS=30
+        ATTEMPT=0
+        
+        while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+          CI_STATUS=$(gh run list --workflow=ci --commit=${{ github.sha }} --json status,conclusion --jq '.[0].conclusion' || echo "pending")
+          echo "Attempt $((ATTEMPT + 1)): CI workflow status: $CI_STATUS"
+          
+          if [ "$CI_STATUS" = "success" ]; then
+            echo "CI workflow completed successfully!"
+            break
+          elif [ "$CI_STATUS" = "failure" ] || [ "$CI_STATUS" = "cancelled" ]; then
+            echo "CI workflow failed with status: $CI_STATUS"
+            exit 1
+          fi
+          
+          echo "Waiting 10 seconds before checking again..."
+          sleep 10
+          ATTEMPT=$((ATTEMPT + 1))
+        done
+        
+        if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+          echo "Timeout waiting for CI workflow to complete"
+          exit 1
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
