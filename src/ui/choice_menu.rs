@@ -16,6 +16,8 @@ pub struct ChoiceMenu {
     validation_error: Option<String>,
     last_content_lines: u16, // Track how many content lines were drawn last time
     timeout: Duration,
+    has_defaults: bool, // Track if defaults were provided
+    user_has_interacted: bool, // Track if user has made any selections/deselections
 }
 
 impl ChoiceMenu {
@@ -27,6 +29,7 @@ impl ChoiceMenu {
         max_choices: usize,
         no_color: bool,
         timeout: Duration,
+        default_selections: Vec<String>,
     ) -> Result<Self> {
         // Only enter raw mode if we have cursor control
         if terminal.capabilities().cursor_control {
@@ -40,7 +43,15 @@ impl ChoiceMenu {
         };
 
         let colorizer = Colorizer::new(color_scheme, no_color);
-        let selected_choices = vec![false; choices.len()];
+        let mut selected_choices = vec![false; choices.len()];
+        let has_defaults = !default_selections.is_empty();
+
+        // Preselect default choices
+        for default_choice in &default_selections {
+            if let Some(index) = choices.iter().position(|choice| choice == default_choice) {
+                selected_choices[index] = true;
+            }
+        }
 
         Ok(Self {
             terminal,
@@ -54,6 +65,8 @@ impl ChoiceMenu {
             validation_error: None,
             last_content_lines: 0,
             timeout,
+            has_defaults,
+            user_has_interacted: false,
         })
     }
 
@@ -122,6 +135,7 @@ impl ChoiceMenu {
             } => {
                 if self.current_index > 0 {
                     self.current_index -= 1;
+                    self.user_has_interacted = true;
                 }
                 Ok(MenuAction::Continue)
             }
@@ -131,6 +145,7 @@ impl ChoiceMenu {
             } => {
                 if self.current_index < self.choices.len() - 1 {
                     self.current_index += 1;
+                    self.user_has_interacted = true;
                 }
                 Ok(MenuAction::Continue)
             }
@@ -144,10 +159,16 @@ impl ChoiceMenu {
                     // In multiple choice mode, Enter submits current selections
                     Ok(MenuAction::Submit)
                 } else {
-                    // In single choice mode, Enter selects current item and submits
-                    self.selected_choices.fill(false);
-                    self.selected_choices[self.current_index] = true;
-                    Ok(MenuAction::Submit)
+                    // In single choice mode, check if we have defaults and user hasn't interacted
+                    if self.has_defaults && !self.user_has_interacted {
+                        // Submit with defaults (already preselected)
+                        Ok(MenuAction::Submit)
+                    } else {
+                        // Select current item and submit
+                        self.selected_choices.fill(false);
+                        self.selected_choices[self.current_index] = true;
+                        Ok(MenuAction::Submit)
+                    }
                 }
             }
 
@@ -159,6 +180,7 @@ impl ChoiceMenu {
                 if self.allow_multiple {
                     self.selected_choices[self.current_index] =
                         !self.selected_choices[self.current_index];
+                    self.user_has_interacted = true;
                 }
                 Ok(MenuAction::Continue)
             }

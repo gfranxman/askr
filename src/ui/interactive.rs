@@ -521,16 +521,39 @@ impl InteractivePrompt {
                     .cloned()
                     .unwrap_or_else(|| ",".to_string());
 
+                // Parse default selections if provided
+                let default_selections = if let Some(default_value) = &self.config.interaction_config.default_value {
+                    self.parse_default_choices(default_value, &selection_separator, choices)
+                } else {
+                    Vec::new()
+                };
+
                 return Some(ChoiceConfig {
                     choices: choices.clone(),
                     allow_multiple: max_choices > 1,
                     min_choices,
                     max_choices,
                     selection_separator,
+                    default_selections,
                 });
             }
         }
         None
+    }
+
+    fn parse_default_choices(&self, default_value: &str, selection_separator: &str, available_choices: &[String]) -> Vec<String> {
+        // Parse the default value using the same separator as selections
+        let default_choices: Vec<String> = default_value
+            .split(selection_separator)
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        // Filter to only include valid choices that exist in available_choices
+        default_choices
+            .into_iter()
+            .filter(|choice| available_choices.iter().any(|available| available == choice))
+            .collect()
     }
 
     fn prompt_with_choice_menu(
@@ -554,6 +577,7 @@ impl InteractivePrompt {
             choice_config.max_choices,
             self.config.ui_config.no_color,
             timeout,
+            choice_config.default_selections,
         )?;
 
         let selected_choices = choice_menu.show(prompt_text)?;
@@ -573,6 +597,7 @@ struct ChoiceConfig {
     min_choices: usize,
     max_choices: usize,
     selection_separator: String,
+    default_selections: Vec<String>,
 }
 
 impl Drop for InteractivePrompt {

@@ -237,7 +237,7 @@ pub struct PromptArgs {
     #[arg(long)]
     pub timeout: Option<u64>,
 
-    /// Default value if user presses Enter
+    /// Default value if user presses Enter (for text input) or preselected choices (for choice menus)
     #[arg(long)]
     pub default: Option<String>,
 
