@@ -218,11 +218,11 @@ fn test_date_validation() {
     // Test valid date
     let (exit_code, stdout, _stderr) = run_prompt_with_input(
         &["--date", "Enter date:"],
-        "2024-01-15"
+        "2025-01-15"
     );
     
     assert_eq!(exit_code, 0);
-    assert_eq!(stdout.trim(), "2024-01-15");
+    assert_eq!(stdout.trim(), "2025-01-15");
     
     // Test invalid date
     let (exit_code, _stdout, stderr) = run_prompt_with_input(

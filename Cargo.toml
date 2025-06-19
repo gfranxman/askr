@@ -8,7 +8,7 @@ repository = "https://github.com/gfranxman/askr"
 homepage = "https://github.com/gfranxman/askr"
 documentation = "https://docs.rs/askr"
 readme = "README.md"
-authors = ["Gabriel Franxman <gfranxman@example.com>"]
+authors = ["Glenn Franxman <gfranxman@example.com>"]
 keywords = ["cli", "input", "validation", "interactive", "terminal"]
 categories = ["command-line-utilities"]
 
