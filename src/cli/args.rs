@@ -2,8 +2,8 @@ use clap::{Parser, ValueEnum, Subcommand, ValueHint};
 use crate::validation::Priority;
 
 #[derive(Parser, Debug)]
-#[command(name = "prompt")]
-#[command(about = "Interactive CLI prompt tool with real-time validation")]
+#[command(name = "askr")]
+#[command(about = "Interactive CLI input tool with real-time validation and choice menus")]
 #[command(version = "0.1.0")]
 pub struct Args {
     #[command(subcommand)]
