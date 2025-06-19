@@ -37,7 +37,7 @@ impl LayoutManager {
         self.prompt_line = 0;
         self.input_line = 0;
         self.error_area_start = 1; // Errors always start right after prompt
-        
+
         if has_help {
             self.help_line = Some(1); // Help text position (but only shown with errors)
         } else {
@@ -212,7 +212,7 @@ impl<W: Write + ExecutableCommand> Screen<W> {
 
         // Move to line after prompt (where errors start)
         self.writer.execute(crossterm::cursor::MoveToNextLine(1))?;
-        
+
         // Clear everything from here down (old errors and help text)
         self.clear_from_cursor()?;
 
@@ -249,14 +249,15 @@ impl<W: Write + ExecutableCommand> Screen<W> {
     pub fn write_help(&mut self, help_text: &str) -> io::Result<()> {
         if self.layout.help_line.is_some() {
             // Help text is written at the current cursor position (after errors)
-            
+
             // Move to next line for help text
             self.writer.execute(crossterm::cursor::MoveToNextLine(1))?;
             self.writer.execute(crossterm::cursor::MoveToColumn(0))?;
-            
+
             // Write help text
             let colored_help = self.colorizer.help_text(help_text);
-            self.colorizer.write_colored(&mut self.writer, &colored_help)?;
+            self.colorizer
+                .write_colored(&mut self.writer, &colored_help)?;
         }
         Ok(())
     }

@@ -480,11 +480,11 @@ impl InteractivePrompt {
             // Write errors below the input and help text if there are errors
             if !errors.is_empty() {
                 screen.write_errors(&errors)?;
-                
+
                 if let Some(help_text) = &self.config.ui_config.help_text {
                     screen.write_help(help_text)?;
                 }
-                
+
                 // Restore cursor to the prompt line
                 screen.restore_saved_cursor()?;
             } else {
