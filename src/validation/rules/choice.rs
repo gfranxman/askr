@@ -10,6 +10,7 @@ pub struct ChoiceValidator {
     max_choices: usize,
     priority: Priority,
     custom_message: Option<String>,
+    selection_separator: String,
 }
 
 impl ChoiceValidator {
@@ -21,6 +22,7 @@ impl ChoiceValidator {
             max_choices: 1,
             priority: Priority::High,
             custom_message: None,
+            selection_separator: ",".to_string(),
         }
     }
 
@@ -49,13 +51,18 @@ impl ChoiceValidator {
         self
     }
 
-    /// Parse input for multiple choices (comma-separated)
+    pub fn selection_separator(mut self, separator: impl Into<String>) -> Self {
+        self.selection_separator = separator.into();
+        self
+    }
+
+    /// Parse input for multiple choices using the configured separator
     fn parse_input(&self, input: &str) -> Vec<String> {
         if self.max_choices == 1 {
             vec![input.trim().to_string()]
         } else {
             input
-                .split(',')
+                .split(&self.selection_separator)
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty())
                 .collect()

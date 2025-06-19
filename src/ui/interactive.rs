@@ -515,12 +515,18 @@ impl InteractivePrompt {
                     .get("max_choices")
                     .and_then(|s| s.parse::<usize>().ok())
                     .unwrap_or(1);
+                let selection_separator = rule_config
+                    .parameters
+                    .get("selection_separator")
+                    .cloned()
+                    .unwrap_or_else(|| ",".to_string());
 
                 return Some(ChoiceConfig {
                     choices: choices.clone(),
                     allow_multiple: max_choices > 1,
                     min_choices,
                     max_choices,
+                    selection_separator,
                 });
             }
         }
@@ -546,7 +552,7 @@ impl InteractivePrompt {
         let selected_choices = choice_menu.show(prompt_text)?;
 
         if choice_config.allow_multiple {
-            Ok(selected_choices.join(","))
+            Ok(selected_choices.join(&choice_config.selection_separator))
         } else {
             Ok(selected_choices.into_iter().next().unwrap_or_default())
         }
@@ -559,6 +565,7 @@ struct ChoiceConfig {
     allow_multiple: bool,
     min_choices: usize,
     max_choices: usize,
+    selection_separator: String,
 }
 
 impl Drop for InteractivePrompt {

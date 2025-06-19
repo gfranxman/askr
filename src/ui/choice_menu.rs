@@ -55,6 +55,12 @@ impl ChoiceMenu {
     }
 
     pub fn show(&mut self, prompt_text: &str) -> Result<Vec<String>> {
+        use crossterm::{terminal::Clear, terminal::ClearType, ExecutableCommand};
+        use std::io::stderr;
+        
+        // Clear any existing content on the current line first
+        stderr().execute(Clear(ClearType::CurrentLine))?;
+        
         let (width, height) = self.terminal.size()?;
         let layout = LayoutManager::new(width, height);
         let mut screen = Screen::new(stderr(), layout, self.colorizer.clone());
@@ -190,18 +196,22 @@ impl ChoiceMenu {
     }
 
     fn clear_and_redraw(&mut self, screen: &mut Screen<io::Stderr>, prompt_text: &str) -> Result<()> {
-        use crossterm::{cursor::MoveUp, terminal::Clear, terminal::ClearType, ExecutableCommand};
+        use crossterm::{cursor::{MoveUp, MoveToColumn}, terminal::Clear, terminal::ClearType, ExecutableCommand};
 
         // Move back using the tracked number of content lines from last draw
+        // Add 1 to account for the prompt line
         if self.last_content_lines > 0 {
-            stderr().execute(MoveUp(self.last_content_lines))?;
+            stderr().execute(MoveUp(self.last_content_lines + 1))?;
         }
+
+        // Move to the beginning of the line to ensure proper cursor positioning
+        stderr().execute(MoveToColumn(0))?;
 
         // Clear from cursor down to remove old menu content
         stderr().execute(Clear(ClearType::FromCursorDown))?;
 
-        // Redraw the menu content (instruction + choices + error)
-        self.draw_menu_content()?;
+        // Redraw the full menu (prompt + instruction + choices + error)
+        self.draw_menu(screen, prompt_text)?;
         
         // Update the line count for next time
         self.update_content_line_count();
@@ -216,6 +226,7 @@ impl ChoiceMenu {
         if self.validation_error.is_some() {
             lines += 1; // error line
         }
+        // Note: prompt line is handled separately in clear_and_redraw
         self.last_content_lines = lines;
     }
 

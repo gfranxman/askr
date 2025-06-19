@@ -14,11 +14,14 @@ SHELL INTEGRATION EXAMPLES:
   # Pick from git branches  
   askr \"Switch to:\" --choices \"$(git branch --format='%(refname:short)')\"
 
-  # Choose from running processes
-  askr \"Kill process:\" --choices \"$(ps aux | awk '{print $11}' | sort -u)\"
+  # Multiple selections with custom separators
+  askr \"Select files:\" --choices \"$(find . -name '*.txt')\" --min-choices 2 --max-choices 5 --selection-separator \" | \"
 
-  # Multiple selections with constraints
-  askr \"Select files:\" --choices \"$(find . -name '*.txt')\" --min-choices 2 --max-choices 5")]
+  # Custom choice separator (semicolon-separated)
+  askr \"Choose option:\" --choices \"apple;banana;cherry\" --choice-separator \";\"
+
+  # Pipe-separated choices with space-separated output
+  askr \"Select tags:\" --choices \"tag1|tag2|tag3\" --choice-separator \"|\" --selection-separator \" \" --min-choices 1 --max-choices 3")]
 pub struct Args {
     #[command(subcommand)]
     pub command: Option<Commands>,
@@ -159,6 +162,14 @@ pub struct PromptArgs {
     /// Comma or newline-separated list of valid choices
     #[arg(long)]
     pub choices: Option<String>,
+
+    /// Custom separator for parsing choices (default: auto-detect comma/newline)
+    #[arg(long)]
+    pub choice_separator: Option<String>,
+
+    /// Custom separator for joining multiple selections in output (default: comma)
+    #[arg(long)]
+    pub selection_separator: Option<String>,
 
     /// Make choice matching case-sensitive
     #[arg(long)]

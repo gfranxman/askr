@@ -263,6 +263,10 @@ fn create_validator(
                 }
             }
 
+            if let Some(selection_separator) = rule_config.parameters.get("selection_separator") {
+                validator = validator.selection_separator(selection_separator);
+            }
+
             if let Some(priority) = &rule_config.priority {
                 validator = validator.with_priority(*priority);
             }

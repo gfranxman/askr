@@ -231,9 +231,9 @@ impl PromptConfig {
             });
         }
 
-        // Choice validation - support both comma and newline separation
+        // Choice validation - support custom separators
         let choices_opt = if let Some(choices_str) = &args.choices {
-            Some(Self::parse_choices(choices_str))
+            Some(Self::parse_choices(choices_str, args.choice_separator.as_deref()))
         } else {
             None
         };
@@ -251,6 +251,10 @@ impl PromptConfig {
             parameters.insert(
                 "max_choices".to_string(),
                 args.max_choices.unwrap_or(1).to_string(),
+            );
+            parameters.insert(
+                "selection_separator".to_string(),
+                args.selection_separator.as_deref().unwrap_or(",").to_string(),
             );
 
             rules.push(ValidationRuleConfig {
@@ -346,23 +350,35 @@ impl PromptConfig {
         Ok((min, max))
     }
 
-    /// Parse choices from string, supporting both comma and newline separation
-    fn parse_choices(choices_str: &str) -> Vec<String> {
-        // First try to detect if it contains newlines (prioritize over commas)
-        if choices_str.contains('\n') {
-            // Parse as newline-separated
-            choices_str
-                .lines()
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.is_empty())
-                .collect()
-        } else {
-            // Parse as comma-separated
-            choices_str
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.is_empty())
-                .collect()
+    /// Parse choices from string, supporting custom separators
+    fn parse_choices(choices_str: &str, custom_separator: Option<&str>) -> Vec<String> {
+        match custom_separator {
+            Some(separator) => {
+                // Use custom separator
+                choices_str
+                    .split(separator)
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect()
+            }
+            None => {
+                // Auto-detect: prioritize newlines over commas
+                if choices_str.contains('\n') {
+                    // Parse as newline-separated
+                    choices_str
+                        .lines()
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect()
+                } else {
+                    // Parse as comma-separated
+                    choices_str
+                        .split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect()
+                }
+            }
         }
     }
 }
