@@ -175,12 +175,7 @@ impl ChoiceMenu {
     }
 
     fn clear_and_redraw(&self, screen: &mut Screen<io::Stderr>, prompt_text: &str) -> Result<()> {
-        use crossterm::{
-            cursor::MoveUp,
-            terminal::Clear,
-            terminal::ClearType,
-            ExecutableCommand,
-        };
+        use crossterm::{cursor::MoveUp, terminal::Clear, terminal::ClearType, ExecutableCommand};
 
         // Move back to the start of the menu area (after the prompt)
         let total_menu_lines = 1 + self.choices.len() as u16; // instruction + choices
