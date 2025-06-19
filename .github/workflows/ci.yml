@@ -112,4 +112,4 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
     
     - name: Check if publishable
-      run: cargo publish --dry-run --allow-dirty
+      run: cargo publish --dry-run
