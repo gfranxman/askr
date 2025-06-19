@@ -62,7 +62,9 @@ prompt completion <SHELL>  # Generate shell completion scripts
 
 ### Choice Validation
 
-- `--choices <LIST>`: Comma-separated list of valid choices
+- `--choices <LIST>`: Comma or newline-separated list of valid choices
+- `--choice-separator <SEP>`: Custom separator for parsing choices (default: auto-detect comma/newline)
+- `--selection-separator <SEP>`: Custom separator for joining multiple selections in output (default: comma)
 - `--choices-case-sensitive`: Make choice matching case-sensitive
 - `--min-choices <N>`: Minimum number of choices required (default: 1)
 - `--max-choices <N>`: Maximum number of choices allowed (default: 1)
@@ -166,6 +168,24 @@ tags=$(prompt "Select tags:" --choices "urgent,bug,feature,docs,test" --min-choi
 
 # Optional selection (0 or 1 choice)
 optional=$(prompt "Optional feature:" --choices "ssl,cache,logs" --min-choices 0)
+```
+
+### Custom Separators
+```bash
+# Git tags with space-delimited output
+tags=$(prompt "Select tags:" --choices "$(git tag)" --selection-separator " " --min-choices 2)
+
+# Semicolon input, pipe output for modules
+modules=$(prompt "Pick modules:" --choices "auth;db;api;ui" --choice-separator ";" --selection-separator " | ")
+
+# Custom delimiters for file selection  
+files=$(prompt "Choose files:" --choices "$(find . -name '*.rs')" --selection-separator " " --max-choices 5)
+
+# Specialized workflows with custom separators
+options=$(prompt "Select options:" --choices "option1::option2::option3" --choice-separator "::" --selection-separator " + ")
+
+# Shell integration with newline-separated choices
+dirs=$(prompt "Select directories:" --choices "$(ls -1 -d */)" --min-choices 1 --max-choices 3)
 ```
 
 ### File Validation

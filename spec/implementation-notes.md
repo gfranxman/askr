@@ -68,13 +68,14 @@ src/
 │   │   ├── format.rs   # Email, URL, IP address validators
 │   │   ├── numeric.rs  # Number, range validators
 │   │   ├── datetime.rs # Date/time validators
-│   │   ├── choice.rs   # Choice/selection validators
+│   │   ├── choice.rs   # Choice/selection validators with custom separators
 │   │   └── filesystem.rs # File/directory validators
 │   ├── priority.rs     # Priority system and error sorting
 │   └── result.rs       # Validation result types
 ├── ui/
 │   ├── mod.rs          # UI orchestration
 │   ├── interactive.rs  # Interactive terminal UI
+│   ├── choice_menu.rs  # Choice menu UI with real-time validation
 │   ├── quiet.rs        # Non-interactive/quiet mode
 │   ├── terminal.rs     # Terminal control and capabilities
 │   ├── colors.rs       # Color scheme and ANSI handling
@@ -361,6 +362,8 @@ pub struct PluginManager {
 - **Auto-completion**: Tab completion for choice validators
 - **History**: Input history across sessions
 - **Themes**: Customizable color schemes
+- **Choice menu enhancements**: Search/filter within large choice lists
+- **Custom separator workflows**: Enhanced shell integration with flexible separators
 
 ### Configuration Language
 ```yaml

@@ -132,7 +132,7 @@ impl TerminalUI {
 
 ## Keyboard Handling
 
-### Input Processing
+### Text Input Mode
 
 #### Character Input
 - **Printable characters**: Add to input buffer, trigger validation
@@ -148,6 +148,21 @@ impl TerminalUI {
 - **Arrow keys**: Left/Right cursor movement within input
 - **Home/End**: Jump to beginning/end of input
 - **Tab**: Auto-completion for choice validators (if applicable)
+
+### Choice Menu Mode
+
+#### Navigation Keys
+- **Up/Down arrows**: Navigate between choices
+- **Enter**: Select current choice (single mode) or submit selections (multi mode)
+- **Space**: Toggle selection (multiple choice mode only)
+- **Ctrl+C**: Cancel choice menu, exit with code 130
+- **Ctrl+D**: EOF, exit with code 1
+
+#### Real-time Validation
+- **Selection validation**: Check min/max constraints after each toggle
+- **Visual feedback**: Display validation errors below choice list
+- **Submit prevention**: Block Enter submission when constraints not met
+- **Error display**: Show "At least N choice(s) required" or "At most N choice(s) allowed"
 
 #### Enhanced Line Editing (Emacs-style)
 - **Ctrl+A**: Jump to beginning of line

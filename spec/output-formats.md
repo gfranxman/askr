@@ -225,6 +225,10 @@ esac
 if prompt "Continue?" --choices "yes,no" --quiet <<< "yes"; then
     echo "Proceeding..."
 fi
+
+# Choice validation with custom separators
+env=$(prompt "Environment:" --choices "dev,staging,prod")
+modules=$(prompt "Modules:" --choices "auth;db;api" --choice-separator ";" --selection-separator " | " --max-choices 2)
 ```
 
 ## Stream Handling

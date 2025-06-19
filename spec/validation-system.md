@@ -124,8 +124,13 @@ struct PartialValidationResult {
 #### Choice Validator
 - **Priority**: High
 - **Logic**: Input must match one of predefined choices
-- **Options**: Case sensitivity, multiple selection
+- **Options**: Case sensitivity, multiple selection, custom separators
 - **Message**: "Must be one of: {choices}"
+- **Features**:
+  - Custom choice parsing with `--choice-separator`
+  - Custom output formatting with `--selection-separator`
+  - Min/max selection constraints with real-time validation
+  - Shell integration support for dynamic choice lists
 - **Suggestions**: Show closest matches for typos
 
 #### Date/Time Validators

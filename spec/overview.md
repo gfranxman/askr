@@ -54,7 +54,8 @@ ssl=$(prompt "Enable SSL:" --choices "yes,no" --default "yes")
 - **Built-in Validators**: Email, hostname, number, date, file path validation
 - **Custom Patterns**: Regex-based validation with custom error messages
 - **Constraint Validation**: Length limits, number ranges, character restrictions
-- **Choice Lists**: Single and multiple selection from predefined options
+- **Choice Lists**: Single and multiple selection from predefined options with custom separators
+- **Shell Integration**: Command substitution with flexible input/output formatting
 - **Priority-based Display**: Critical, High, Medium, Low priority error messages
 
 ### User Interface

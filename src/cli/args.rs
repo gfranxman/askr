@@ -14,14 +14,17 @@ SHELL INTEGRATION EXAMPLES:
   # Pick from git branches  
   askr \"Switch to:\" --choices \"$(git branch --format='%(refname:short)')\"
 
-  # Multiple selections with custom separators
-  askr \"Select files:\" --choices \"$(find . -name '*.txt')\" --min-choices 2 --max-choices 5 --selection-separator \" | \"
+  # Git tags with space-delimited output
+  askr \"Select tags:\" --choices \"$(git tag)\" --selection-separator \" \" --min-choices 2
 
-  # Custom choice separator (semicolon-separated)
-  askr \"Choose option:\" --choices \"apple;banana;cherry\" --choice-separator \";\"
+  # Semicolon input, pipe output for modules  
+  askr \"Pick modules:\" --choices \"auth;db;api;ui\" --choice-separator \";\" --selection-separator \" | \"
 
-  # Pipe-separated choices with space-separated output
-  askr \"Select tags:\" --choices \"tag1|tag2|tag3\" --choice-separator \"|\" --selection-separator \" \" --min-choices 1 --max-choices 3")]
+  # Custom delimiters for file selection
+  askr \"Choose files:\" --choices \"$(find . -name '*.rs')\" --selection-separator \" \" --max-choices 5
+
+  # Specialized workflows with custom separators
+  askr \"Select options:\" --choices \"option1::option2::option3\" --choice-separator \"::\" --selection-separator \" + \"")]
 pub struct Args {
     #[command(subcommand)]
     pub command: Option<Commands>,
