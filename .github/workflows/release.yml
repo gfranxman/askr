@@ -85,8 +85,6 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         files: ./${{ matrix.asset_name }}
-        append_body: false
-        generate_release_notes: false
 
   publish-crate:
     name: Publish to crates.io
@@ -95,23 +93,23 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Wait for CI to pass
-      uses: lewagon/wait-on-check-action@v1.3.1
-      with:
-        ref: ${{ github.ref }}
-        check-name: 'Test'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        wait-interval: 10
-        allowed-conclusions: success
+    - name: Wait for CI workflow to complete
+      run: |
+        echo "Waiting for CI workflow to complete..."
+        sleep 30
         
-    - name: Wait for Security audit to pass
-      uses: lewagon/wait-on-check-action@v1.3.1
-      with:
-        ref: ${{ github.ref }}
-        check-name: 'Security audit'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        wait-interval: 10
-        allowed-conclusions: success
+        # Check if CI workflow completed successfully
+        CI_STATUS=$(gh run list --workflow=ci --commit=${{ github.sha }} --json status,conclusion --jq '.[0].conclusion')
+        echo "CI workflow status: $CI_STATUS"
+        
+        if [ "$CI_STATUS" != "success" ]; then
+          echo "CI workflow did not complete successfully. Status: $CI_STATUS"
+          exit 1
+        fi
+        
+        echo "CI workflow completed successfully!"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
