@@ -1,6 +1,6 @@
-use std::path::Path;
+use super::super::{PartialValidationResult, Priority, ValidationResult, Validator};
 use std::fs;
-use super::super::{Validator, ValidationResult, PartialValidationResult, Priority};
+use std::path::Path;
 
 /// File exists validator
 #[derive(Debug)]
@@ -16,12 +16,12 @@ impl FileExistsValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -31,7 +31,7 @@ impl FileExistsValidator {
 impl Validator for FileExistsValidator {
     fn validate(&self, input: &str) -> ValidationResult {
         let path = Path::new(input);
-        
+
         if path.exists() && path.is_file() {
             ValidationResult::success("file_exists")
         } else {
@@ -45,12 +45,12 @@ impl Validator for FileExistsValidator {
             ValidationResult::failure("file_exists", self.priority, &message)
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Basic path validation - check for invalid characters
         if cfg!(windows) {
             let invalid_chars = ['<', '>', ':', '"', '|', '?', '*'];
@@ -67,14 +67,14 @@ impl Validator for FileExistsValidator {
                 }
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "file_exists"
     }
@@ -94,12 +94,12 @@ impl DirExistsValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -109,7 +109,7 @@ impl DirExistsValidator {
 impl Validator for DirExistsValidator {
     fn validate(&self, input: &str) -> ValidationResult {
         let path = Path::new(input);
-        
+
         if path.exists() && path.is_dir() {
             ValidationResult::success("dir_exists")
         } else {
@@ -123,12 +123,12 @@ impl Validator for DirExistsValidator {
             ValidationResult::failure("dir_exists", self.priority, &message)
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Basic path validation - check for invalid characters
         if cfg!(windows) {
             let invalid_chars = ['<', '>', ':', '"', '|', '?', '*'];
@@ -145,14 +145,14 @@ impl Validator for DirExistsValidator {
                 }
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "dir_exists"
     }
@@ -172,12 +172,12 @@ impl PathExistsValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -187,7 +187,7 @@ impl PathExistsValidator {
 impl Validator for PathExistsValidator {
     fn validate(&self, input: &str) -> ValidationResult {
         let path = Path::new(input);
-        
+
         if path.exists() {
             ValidationResult::success("path_exists")
         } else {
@@ -199,12 +199,12 @@ impl Validator for PathExistsValidator {
             ValidationResult::failure("path_exists", self.priority, &message)
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Basic path validation - check for invalid characters
         if cfg!(windows) {
             let invalid_chars = ['<', '>', ':', '"', '|', '?', '*'];
@@ -221,14 +221,14 @@ impl Validator for PathExistsValidator {
                 }
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "path_exists"
     }
@@ -248,12 +248,12 @@ impl ReadableValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -263,7 +263,7 @@ impl ReadableValidator {
 impl Validator for ReadableValidator {
     fn validate(&self, input: &str) -> ValidationResult {
         let path = Path::new(input);
-        
+
         if !path.exists() {
             let message = if let Some(msg) = &self.custom_message {
                 msg.clone()
@@ -272,7 +272,7 @@ impl Validator for ReadableValidator {
             };
             return ValidationResult::failure("readable", self.priority, &message);
         }
-        
+
         // Try to read the file/directory to check permissions
         let readable = if path.is_file() {
             fs::File::open(path).is_ok()
@@ -281,7 +281,7 @@ impl Validator for ReadableValidator {
         } else {
             false
         };
-        
+
         if readable {
             ValidationResult::success("readable")
         } else {
@@ -293,12 +293,12 @@ impl Validator for ReadableValidator {
             ValidationResult::failure("readable", self.priority, &message)
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Basic path validation - check for invalid characters
         if cfg!(windows) {
             let invalid_chars = ['<', '>', ':', '"', '|', '?', '*'];
@@ -315,14 +315,14 @@ impl Validator for ReadableValidator {
                 }
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "readable"
     }
@@ -342,12 +342,12 @@ impl WritableValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -357,7 +357,7 @@ impl WritableValidator {
 impl Validator for WritableValidator {
     fn validate(&self, input: &str) -> ValidationResult {
         let path = Path::new(input);
-        
+
         if !path.exists() {
             let message = if let Some(msg) = &self.custom_message {
                 msg.clone()
@@ -366,7 +366,7 @@ impl Validator for WritableValidator {
             };
             return ValidationResult::failure("writable", self.priority, &message);
         }
-        
+
         // Check if we can write to the path
         let writable = if path.is_file() {
             fs::OpenOptions::new().write(true).open(path).is_ok()
@@ -384,7 +384,7 @@ impl Validator for WritableValidator {
         } else {
             false
         };
-        
+
         if writable {
             ValidationResult::success("writable")
         } else {
@@ -396,12 +396,12 @@ impl Validator for WritableValidator {
             ValidationResult::failure("writable", self.priority, &message)
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Basic path validation - check for invalid characters
         if cfg!(windows) {
             let invalid_chars = ['<', '>', ':', '"', '|', '?', '*'];
@@ -418,14 +418,14 @@ impl Validator for WritableValidator {
                 }
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "writable"
     }
@@ -445,12 +445,12 @@ impl ExecutableValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -460,7 +460,7 @@ impl ExecutableValidator {
 impl Validator for ExecutableValidator {
     fn validate(&self, input: &str) -> ValidationResult {
         let path = Path::new(input);
-        
+
         if !path.exists() {
             let message = if let Some(msg) = &self.custom_message {
                 msg.clone()
@@ -469,7 +469,7 @@ impl Validator for ExecutableValidator {
             };
             return ValidationResult::failure("executable", self.priority, &message);
         }
-        
+
         if !path.is_file() {
             let message = if let Some(msg) = &self.custom_message {
                 msg.clone()
@@ -478,7 +478,7 @@ impl Validator for ExecutableValidator {
             };
             return ValidationResult::failure("executable", self.priority, &message);
         }
-        
+
         // Check if the file is executable
         #[cfg(unix)]
         let executable = {
@@ -490,18 +490,21 @@ impl Validator for ExecutableValidator {
                 false
             }
         };
-        
+
         #[cfg(windows)]
         let executable = {
             // On Windows, check if it has an executable extension
             if let Some(ext) = path.extension() {
                 let ext_str = ext.to_string_lossy().to_lowercase();
-                matches!(ext_str.as_str(), "exe" | "bat" | "cmd" | "com" | "scr" | "msi")
+                matches!(
+                    ext_str.as_str(),
+                    "exe" | "bat" | "cmd" | "com" | "scr" | "msi"
+                )
             } else {
                 false
             }
         };
-        
+
         if executable {
             ValidationResult::success("executable")
         } else {
@@ -513,12 +516,12 @@ impl Validator for ExecutableValidator {
             ValidationResult::failure("executable", self.priority, &message)
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Basic path validation - check for invalid characters
         if cfg!(windows) {
             let invalid_chars = ['<', '>', ':', '"', '|', '?', '*'];
@@ -535,14 +538,14 @@ impl Validator for ExecutableValidator {
                 }
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "executable"
     }

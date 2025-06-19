@@ -1,6 +1,6 @@
+use super::Priority;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use super::Priority;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidationResult {
@@ -21,7 +21,7 @@ impl ValidationResult {
             metadata: HashMap::new(),
         }
     }
-    
+
     pub fn success_with_priority(rule_name: impl Into<String>, priority: Priority) -> Self {
         Self {
             rule_name: rule_name.into(),
@@ -31,8 +31,12 @@ impl ValidationResult {
             metadata: HashMap::new(),
         }
     }
-    
-    pub fn failure(rule_name: impl Into<String>, priority: Priority, message: impl Into<String>) -> Self {
+
+    pub fn failure(
+        rule_name: impl Into<String>,
+        priority: Priority,
+        message: impl Into<String>,
+    ) -> Self {
         Self {
             rule_name: rule_name.into(),
             passed: false,
@@ -41,7 +45,7 @@ impl ValidationResult {
             metadata: HashMap::new(),
         }
     }
-    
+
     pub fn with_metadata(mut self, key: impl Into<String>, value: serde_json::Value) -> Self {
         self.metadata.insert(key.into(), value);
         self
@@ -63,7 +67,7 @@ impl PartialValidationResult {
             suggestion: None,
         }
     }
-    
+
     pub fn error_at(pos: usize) -> Self {
         Self {
             first_error_pos: Some(pos),
@@ -71,12 +75,12 @@ impl PartialValidationResult {
             suggestion: None,
         }
     }
-    
+
     pub fn with_suggestion(mut self, suggestion: impl Into<String>) -> Self {
         self.suggestion = Some(suggestion.into());
         self
     }
-    
+
     pub fn blocking(mut self) -> Self {
         self.can_continue = false;
         self
@@ -105,23 +109,25 @@ impl ValidationSummary {
     pub fn new(value: String, mut results: Vec<ValidationResult>) -> Self {
         // Sort results by priority (Critical first)
         results.sort_by(|a, b| {
-            a.priority.cmp(&b.priority)
+            a.priority
+                .cmp(&b.priority)
                 .then_with(|| a.rule_name.cmp(&b.rule_name))
         });
-        
+
         let valid = results.iter().all(|r| r.passed);
         let error = if valid {
             None
         } else {
-            results.iter()
+            results
+                .iter()
                 .filter(|r| !r.passed)
                 .min_by_key(|r| r.priority)
                 .and_then(|r| r.message.as_ref())
                 .cloned()
         };
-        
+
         let rules_passed = results.iter().filter(|r| r.passed).count();
-        
+
         Self {
             value: value.clone(),
             valid,

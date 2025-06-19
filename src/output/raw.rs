@@ -1,6 +1,6 @@
 use super::OutputFormatter;
-use crate::validation::ValidationSummary;
 use crate::error::Result;
+use crate::validation::ValidationSummary;
 
 /// Raw output formatter - outputs the raw value without any validation
 pub struct RawFormatter;

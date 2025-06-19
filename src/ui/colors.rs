@@ -1,4 +1,6 @@
-use crossterm::style::{Color, SetForegroundColor, SetBackgroundColor, ResetColor, Attribute, SetAttribute};
+use crossterm::style::{
+    Attribute, Color, ResetColor, SetAttribute, SetBackgroundColor, SetForegroundColor,
+};
 use crossterm::ExecutableCommand;
 use std::io::{self, Write};
 
@@ -29,7 +31,7 @@ impl ColorScheme {
             background: None,
         }
     }
-    
+
     pub fn no_color() -> Self {
         Self {
             valid_text: Color::Reset,
@@ -43,7 +45,7 @@ impl ColorScheme {
             background: None,
         }
     }
-    
+
     pub fn high_contrast() -> Self {
         Self {
             valid_text: Color::White,
@@ -75,22 +77,22 @@ impl ColoredText {
             attributes: Vec::new(),
         }
     }
-    
+
     pub fn with_background(mut self, background: Color) -> Self {
         self.background = Some(background);
         self
     }
-    
+
     pub fn bold(mut self) -> Self {
         self.attributes.push(Attribute::Bold);
         self
     }
-    
+
     pub fn italic(mut self) -> Self {
         self.attributes.push(Attribute::Italic);
         self
     }
-    
+
     pub fn underlined(mut self) -> Self {
         self.attributes.push(Attribute::Underlined);
         self
@@ -106,81 +108,91 @@ pub struct Colorizer {
 impl Colorizer {
     pub fn new(scheme: ColorScheme, no_color: bool) -> Self {
         Self {
-            scheme: if no_color { ColorScheme::no_color() } else { scheme },
+            scheme: if no_color {
+                ColorScheme::no_color()
+            } else {
+                scheme
+            },
             no_color,
         }
     }
-    
-    pub fn write_colored<W: Write + ExecutableCommand>(&self, writer: &mut W, colored_text: &ColoredText) -> io::Result<()> {
+
+    pub fn write_colored<W: Write + ExecutableCommand>(
+        &self,
+        writer: &mut W,
+        colored_text: &ColoredText,
+    ) -> io::Result<()> {
         if !self.no_color {
             writer.execute(SetForegroundColor(colored_text.color))?;
-            
+
             if let Some(bg) = colored_text.background {
                 writer.execute(SetBackgroundColor(bg))?;
             }
-            
+
             for attr in &colored_text.attributes {
                 writer.execute(SetAttribute(*attr))?;
             }
         }
-        
+
         write!(writer, "{}", colored_text.text)?;
-        
+
         if !self.no_color {
             writer.execute(ResetColor)?;
         }
-        
+
         Ok(())
     }
-    
+
     pub fn prompt_text(&self, text: impl Into<String>) -> ColoredText {
         ColoredText::new(text, self.scheme.prompt_text).bold()
     }
-    
+
     pub fn valid_text(&self, text: impl Into<String>) -> ColoredText {
         ColoredText::new(text, self.scheme.valid_text)
     }
-    
+
     pub fn invalid_text(&self, text: impl Into<String>) -> ColoredText {
         ColoredText::new(text, self.scheme.invalid_text)
     }
-    
+
     pub fn help_text(&self, text: impl Into<String>) -> ColoredText {
         ColoredText::new(text, self.scheme.help_text)
     }
-    
+
     pub fn highlighted_text(&self, text: impl Into<String>) -> ColoredText {
-        ColoredText::new(text, Color::Black).with_background(Color::White).bold()
+        ColoredText::new(text, Color::Black)
+            .with_background(Color::White)
+            .bold()
     }
-    
+
     pub fn error_message(&self, text: impl Into<String>) -> ColoredText {
         ColoredText::new(format!("❌ {}", text.into()), self.scheme.error_icon)
     }
-    
+
     pub fn warning_message(&self, text: impl Into<String>) -> ColoredText {
         ColoredText::new(format!("⚠️ {}", text.into()), self.scheme.warning_icon)
     }
-    
+
     pub fn info_message(&self, text: impl Into<String>) -> ColoredText {
         ColoredText::new(format!("💡 {}", text.into()), self.scheme.info_icon)
     }
-    
+
     pub fn success_message(&self, text: impl Into<String>) -> ColoredText {
         ColoredText::new(format!("✅ {}", text.into()), self.scheme.success_icon)
     }
-    
+
     pub fn no_color_error(&self, text: impl Into<String>) -> String {
         format!("[ERROR] {}", text.into())
     }
-    
+
     pub fn no_color_warning(&self, text: impl Into<String>) -> String {
         format!("[WARN] {}", text.into())
     }
-    
+
     pub fn no_color_info(&self, text: impl Into<String>) -> String {
         format!("[INFO] {}", text.into())
     }
-    
+
     pub fn no_color_success(&self, text: impl Into<String>) -> String {
         format!("[OK] {}", text.into())
     }

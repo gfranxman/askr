@@ -1,6 +1,6 @@
 use super::OutputFormatter;
-use crate::validation::ValidationSummary;
 use crate::error::Result;
+use crate::validation::ValidationSummary;
 
 /// Default output formatter - just the value to stdout
 pub struct DefaultFormatter;

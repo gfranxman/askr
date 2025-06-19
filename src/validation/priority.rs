@@ -20,16 +20,16 @@ impl Priority {
             _ => None,
         }
     }
-    
+
     pub fn as_str(&self) -> &'static str {
         match self {
             Priority::Critical => "critical",
             Priority::High => "high",
-            Priority::Medium => "medium",  
+            Priority::Medium => "medium",
             Priority::Low => "low",
         }
     }
-    
+
     pub fn icon(&self) -> &'static str {
         match self {
             Priority::Critical | Priority::High => "❌",

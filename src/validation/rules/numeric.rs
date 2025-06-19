@@ -1,4 +1,4 @@
-use super::super::{Validator, ValidationResult, PartialValidationResult, Priority};
+use super::super::{PartialValidationResult, Priority, ValidationResult, Validator};
 use std::str::FromStr;
 
 /// Integer validator
@@ -15,12 +15,12 @@ impl IntegerValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -32,16 +32,19 @@ impl Validator for IntegerValidator {
         if input.parse::<i64>().is_ok() {
             ValidationResult::success("integer")
         } else {
-            let message = self.custom_message.as_deref().unwrap_or("Must be a valid integer");
+            let message = self
+                .custom_message
+                .as_deref()
+                .unwrap_or("Must be a valid integer");
             ValidationResult::failure("integer", self.priority, message)
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Check for invalid characters
         for (i, ch) in input.char_indices() {
             if i == 0 && (ch == '+' || ch == '-') {
@@ -51,14 +54,14 @@ impl Validator for IntegerValidator {
                 return PartialValidationResult::error_at(i);
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "integer"
     }
@@ -78,12 +81,12 @@ impl FloatValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -95,19 +98,22 @@ impl Validator for FloatValidator {
         if input.parse::<f64>().is_ok() {
             ValidationResult::success("float")
         } else {
-            let message = self.custom_message.as_deref().unwrap_or("Must be a valid number");
+            let message = self
+                .custom_message
+                .as_deref()
+                .unwrap_or("Must be a valid number");
             ValidationResult::failure("float", self.priority, message)
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         let mut has_dot = false;
         let mut has_e = false;
-        
+
         for (i, ch) in input.char_indices() {
             match ch {
                 '+' | '-' => {
@@ -142,14 +148,14 @@ impl Validator for FloatValidator {
                 }
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "float"
     }
@@ -173,24 +179,24 @@ impl RangeValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn min_only(min: f64) -> Self {
         Self::new(Some(min), None)
     }
-    
+
     pub fn max_only(max: f64) -> Self {
         Self::new(None, Some(max))
     }
-    
+
     pub fn between(min: f64, max: f64) -> Self {
         Self::new(Some(min), Some(max))
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -202,25 +208,28 @@ impl Validator for RangeValidator {
         let value = match input.parse::<f64>() {
             Ok(v) => v,
             Err(_) => {
-                let message = self.custom_message.as_deref().unwrap_or("Must be a valid number");
+                let message = self
+                    .custom_message
+                    .as_deref()
+                    .unwrap_or("Must be a valid number");
                 return ValidationResult::failure("range", self.priority, message);
             }
         };
-        
+
         let mut errors = Vec::new();
-        
+
         if let Some(min) = self.min {
             if value < min {
                 errors.push(format!("must be at least {}", min));
             }
         }
-        
+
         if let Some(max) = self.max {
             if value > max {
                 errors.push(format!("must be at most {}", max));
             }
         }
-        
+
         if errors.is_empty() {
             ValidationResult::success("range")
         } else {
@@ -237,17 +246,17 @@ impl Validator for RangeValidator {
             ValidationResult::failure("range", self.priority, &message)
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         // Use float validation for partial validation
         let float_validator = FloatValidator::new();
         float_validator.partial_validate(input, _cursor_pos)
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "range"
     }
@@ -267,12 +276,12 @@ impl PositiveValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -284,38 +293,44 @@ impl Validator for PositiveValidator {
         let value = match input.parse::<f64>() {
             Ok(v) => v,
             Err(_) => {
-                let message = self.custom_message.as_deref().unwrap_or("Must be a valid number");
+                let message = self
+                    .custom_message
+                    .as_deref()
+                    .unwrap_or("Must be a valid number");
                 return ValidationResult::failure("positive", self.priority, message);
             }
         };
-        
+
         if value > 0.0 {
             ValidationResult::success("positive")
         } else {
-            let message = self.custom_message.as_deref().unwrap_or("Must be a positive number");
+            let message = self
+                .custom_message
+                .as_deref()
+                .unwrap_or("Must be a positive number");
             ValidationResult::failure("positive", self.priority, message)
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Don't allow negative sign at start
         if input.starts_with('-') {
             return PartialValidationResult::error_at(0);
         }
-        
+
         // Use float validation for the rest
         let float_validator = FloatValidator::new();
         float_validator.partial_validate(input, _cursor_pos)
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "positive"
     }
@@ -335,12 +350,12 @@ impl NegativeValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -352,24 +367,30 @@ impl Validator for NegativeValidator {
         let value = match input.parse::<f64>() {
             Ok(v) => v,
             Err(_) => {
-                let message = self.custom_message.as_deref().unwrap_or("Must be a valid number");
+                let message = self
+                    .custom_message
+                    .as_deref()
+                    .unwrap_or("Must be a valid number");
                 return ValidationResult::failure("negative", self.priority, message);
             }
         };
-        
+
         if value < 0.0 {
             ValidationResult::success("negative")
         } else {
-            let message = self.custom_message.as_deref().unwrap_or("Must be a negative number");
+            let message = self
+                .custom_message
+                .as_deref()
+                .unwrap_or("Must be a negative number");
             ValidationResult::failure("negative", self.priority, message)
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Must start with negative sign for negative numbers
         if !input.starts_with('-') && input.len() > 0 {
             // Allow typing the minus sign first
@@ -377,16 +398,16 @@ impl Validator for NegativeValidator {
                 return PartialValidationResult::valid(); // User might type minus later
             }
         }
-        
+
         // Use float validation for the rest
         let float_validator = FloatValidator::new();
         float_validator.partial_validate(input, _cursor_pos)
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "negative"
     }

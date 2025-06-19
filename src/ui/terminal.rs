@@ -1,8 +1,8 @@
 use crossterm::{
+    event::{DisableMouseCapture, EnableMouseCapture},
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
-    event::{EnableMouseCapture, DisableMouseCapture},
     tty::IsTty,
+    ExecutableCommand,
 };
 use std::io::{self, stdout, Stdout};
 
@@ -29,9 +29,9 @@ impl TerminalCapabilities {
                 supports_alternate_screen: false,
             });
         }
-        
+
         let (width, height) = terminal::size()?;
-        
+
         Ok(Self {
             colors_supported: true, // Most modern terminals support colors
             cursor_control: true,   // crossterm handles this
@@ -41,7 +41,7 @@ impl TerminalCapabilities {
             supports_alternate_screen: true,
         })
     }
-    
+
     pub fn fallback_ui(&self) -> UIMode {
         if !self.cursor_control {
             UIMode::Simple
@@ -55,9 +55,9 @@ impl TerminalCapabilities {
 
 #[derive(Debug, Clone, Copy)]
 pub enum UIMode {
-    Full,       // Full UI with colors and cursor control
-    NoColor,    // No colors but cursor control
-    Simple,     // Basic text only
+    Full,    // Full UI with colors and cursor control
+    NoColor, // No colors but cursor control
+    Simple,  // Basic text only
 }
 
 pub struct Terminal {
@@ -69,51 +69,52 @@ pub struct Terminal {
 impl Terminal {
     pub fn new() -> io::Result<Self> {
         let capabilities = TerminalCapabilities::detect()?;
-        
+
         Ok(Self {
             stdout: stdout(),
             capabilities,
             original_hook: None,
         })
     }
-    
+
     pub fn enter_raw_mode(&mut self) -> io::Result<()> {
         terminal::enable_raw_mode()?;
         Ok(())
     }
-    
+
     pub fn leave_raw_mode(&mut self) -> io::Result<()> {
         terminal::disable_raw_mode()?;
         Ok(())
     }
-    
+
     pub fn enter_alternate_screen(&mut self) -> io::Result<()> {
         if self.capabilities.supports_alternate_screen {
             self.stdout.execute(EnterAlternateScreen)?;
         }
         Ok(())
     }
-    
+
     pub fn leave_alternate_screen(&mut self) -> io::Result<()> {
         if self.capabilities.supports_alternate_screen {
             self.stdout.execute(LeaveAlternateScreen)?;
         }
         Ok(())
     }
-    
+
     pub fn capabilities(&self) -> &TerminalCapabilities {
         &self.capabilities
     }
-    
+
     pub fn size(&self) -> io::Result<(u16, u16)> {
         terminal::size()
     }
-    
+
     pub fn clear_screen(&mut self) -> io::Result<()> {
-        self.stdout.execute(terminal::Clear(terminal::ClearType::All))?;
+        self.stdout
+            .execute(terminal::Clear(terminal::ClearType::All))?;
         Ok(())
     }
-    
+
     pub fn flush(&mut self) -> io::Result<()> {
         use std::io::Write;
         self.stdout.flush()

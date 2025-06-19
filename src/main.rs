@@ -1,19 +1,25 @@
 mod cli;
 mod error;
-mod validation;
+mod input;
 mod output;
 mod ui;
-mod input;
+mod validation;
 
-use clap::{Parser, CommandFactory};
+use clap::{CommandFactory, Parser};
 use clap_complete::{generate, Shell as CompletionShell};
-use cli::{Args, PromptConfig, Commands, Shell};
+use cli::{Args, Commands, PromptConfig, Shell};
 use error::{PromptError, Result};
-use validation::{ValidationEngine, ValidatorType};
-use validation::rules::{RequiredValidator, MinLengthValidator, MaxLengthValidator, PatternValidator, EmailValidator, HostnameValidator, UrlValidator, Ipv4Validator, Ipv6Validator, IntegerValidator, FloatValidator, RangeValidator, PositiveValidator, NegativeValidator, ChoiceValidator, DateValidator, TimeValidator, DateTimeValidator, FileExistsValidator, DirExistsValidator, PathExistsValidator, ReadableValidator, WritableValidator, ExecutableValidator};
-use output::{OutputFormatter, DefaultFormatter, JsonFormatter, RawFormatter};
-use ui::{Terminal, TerminalCapabilities};
+use output::{DefaultFormatter, JsonFormatter, OutputFormatter, RawFormatter};
 use ui::interactive::InteractivePrompt;
+use ui::{Terminal, TerminalCapabilities};
+use validation::rules::{
+    ChoiceValidator, DateTimeValidator, DateValidator, DirExistsValidator, EmailValidator,
+    ExecutableValidator, FileExistsValidator, FloatValidator, HostnameValidator, IntegerValidator,
+    Ipv4Validator, Ipv6Validator, MaxLengthValidator, MinLengthValidator, NegativeValidator,
+    PathExistsValidator, PatternValidator, PositiveValidator, RangeValidator, ReadableValidator,
+    RequiredValidator, TimeValidator, UrlValidator, WritableValidator,
+};
+use validation::{ValidationEngine, ValidatorType};
 
 fn main() {
     if let Err(e) = run() {
@@ -24,22 +30,22 @@ fn main() {
 
 fn run() -> Result<()> {
     let args = Args::parse();
-    
+
     // Handle completion subcommand
     if let Some(Commands::Completion { shell }) = args.command {
         generate_completion(shell);
         return Ok(());
     }
-    
+
     let config = PromptConfig::from_args(args.prompt_args)?;
-    
+
     // Get input based on mode
     let input = if config.quiet_mode {
         read_from_stdin()?
     } else {
         // Check if we can use interactive mode
         let terminal = Terminal::new()?;
-        
+
         if terminal.capabilities().cursor_control {
             // Use interactive terminal UI
             let engine = build_validation_engine(&config)?;
@@ -50,48 +56,53 @@ fn run() -> Result<()> {
             prompt_simple(&config.prompt_text.as_deref().unwrap_or("Enter input:"))?
         }
     };
-    
+
     // Final validation for output
     let engine = build_validation_engine(&config)?;
     let summary = engine.validate(&input);
-    
+
     // Format output based on config
     let formatter: Box<dyn OutputFormatter> = match config.output_format {
         cli::args::OutputFormat::Default => Box::new(DefaultFormatter),
         cli::args::OutputFormat::Json => Box::new(JsonFormatter),
         cli::args::OutputFormat::Raw => Box::new(RawFormatter),
     };
-    
+
     let output = formatter.format(&summary)?;
-    
+
     // Print output to stdout
     if !output.is_empty() {
         println!("{}", output);
     }
-    
+
     // Exit with appropriate code
     if summary.valid {
         Ok(())
     } else {
         Err(PromptError::ValidationFailed(
-            summary.error.unwrap_or_else(|| "Validation failed".to_string())
+            summary
+                .error
+                .unwrap_or_else(|| "Validation failed".to_string()),
         ))
     }
 }
 
 fn build_validation_engine(config: &PromptConfig) -> Result<ValidationEngine> {
     let mut engine = ValidationEngine::new();
-    
+
     // Build validators from config
     for rule_config in &config.validation_rules {
         let validator = create_validator(&rule_config.validator_type, &rule_config)?;
         engine.add_validator(validator);
     }
-    
+
     Ok(engine)
 }
 
-fn create_validator(validator_type: &ValidatorType, rule_config: &validation::ValidationRuleConfig) -> Result<Box<dyn validation::Validator>> {
+fn create_validator(
+    validator_type: &ValidatorType,
+    rule_config: &validation::ValidationRuleConfig,
+) -> Result<Box<dyn validation::Validator>> {
     match validator_type {
         ValidatorType::Required => {
             let mut validator = RequiredValidator::new();
@@ -232,26 +243,26 @@ fn create_validator(validator_type: &ValidatorType, rule_config: &validation::Va
         }
         ValidatorType::Choices(choices) => {
             let mut validator = ChoiceValidator::new(choices.clone());
-            
+
             // Extract parameters
             if let Some(case_sensitive_str) = rule_config.parameters.get("case_sensitive") {
                 if let Ok(case_sensitive) = case_sensitive_str.parse::<bool>() {
                     validator = validator.case_sensitive(case_sensitive);
                 }
             }
-            
+
             if let Some(min_choices_str) = rule_config.parameters.get("min_choices") {
                 if let Ok(min_choices) = min_choices_str.parse::<usize>() {
                     validator = validator.min_choices(min_choices);
                 }
             }
-            
+
             if let Some(max_choices_str) = rule_config.parameters.get("max_choices") {
                 if let Ok(max_choices) = max_choices_str.parse::<usize>() {
                     validator = validator.max_choices(max_choices);
                 }
             }
-            
+
             if let Some(priority) = &rule_config.priority {
                 validator = validator.with_priority(*priority);
             }
@@ -362,13 +373,13 @@ fn read_from_stdin() -> Result<String> {
 
 fn prompt_simple(prompt_text: &str) -> Result<String> {
     use std::io::{self, Write};
-    
+
     eprint!("{} ", prompt_text);
     io::stderr().flush()?;
-    
+
     let mut input = String::new();
     io::stdin().read_line(&mut input)?;
-    
+
     Ok(input.trim().to_string())
 }
 
@@ -380,6 +391,6 @@ fn generate_completion(shell: Shell) {
         Shell::Fish => CompletionShell::Fish,
         Shell::PowerShell => CompletionShell::PowerShell,
     };
-    
+
     generate(shell, &mut cmd, "prompt", &mut std::io::stdout());
 }

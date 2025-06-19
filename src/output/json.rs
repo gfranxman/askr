@@ -1,6 +1,6 @@
 use super::OutputFormatter;
-use crate::validation::ValidationSummary;
 use crate::error::Result;
+use crate::validation::ValidationSummary;
 
 /// JSON output formatter
 pub struct JsonFormatter;

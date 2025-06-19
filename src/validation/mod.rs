@@ -5,7 +5,7 @@ pub mod rules;
 
 pub use engine::ValidationEngine;
 pub use priority::Priority;
-pub use result::{ValidationResult, PartialValidationResult, ValidationSummary};
+pub use result::{PartialValidationResult, ValidationResult, ValidationSummary};
 
 use crate::error::Result;
 
@@ -13,16 +13,16 @@ use crate::error::Result;
 pub trait Validator: Send + Sync {
     /// Validate complete input
     fn validate(&self, input: &str) -> ValidationResult;
-    
+
     /// Validate partial input during typing
     fn partial_validate(&self, input: &str, cursor_pos: usize) -> PartialValidationResult;
-    
+
     /// Get the priority of this validator
     fn priority(&self) -> Priority;
-    
+
     /// Get the name/identifier of this validator
     fn name(&self) -> &str;
-    
+
     /// Get human-readable description of this validator
     fn description(&self) -> &str {
         self.name()
@@ -47,7 +47,7 @@ pub enum ValidatorType {
     Email,
     Hostname,
     Url,
-    Ipv4, 
+    Ipv4,
     Ipv6,
     Integer,
     Float,

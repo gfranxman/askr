@@ -4,31 +4,31 @@ use thiserror::Error;
 pub enum PromptError {
     #[error("Invalid CLI arguments: {0}")]
     InvalidArguments(String),
-    
+
     #[error("Validation failed: {0}")]
     ValidationFailed(String),
-    
+
     #[error("Terminal error: {0}")]
     Terminal(String),
-    
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
-    
+
     #[error("Timeout exceeded")]
     Timeout,
-    
+
     #[error("User interrupted")]
     Interrupted,
-    
+
     #[error("Maximum attempts exceeded")]
     MaxAttemptsExceeded,
-    
+
     #[error("Regex error: {0}")]
     Regex(#[from] regex::Error),
-    
+
     #[error("JSON serialization error: {0}")]
     Json(#[from] serde_json::Error),
-    
+
     #[error("Date/time parsing error: {0}")]
     DateTime(#[from] chrono::ParseError),
 }

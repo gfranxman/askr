@@ -1,5 +1,5 @@
 pub mod interactive;
-pub mod stdin;
 pub mod processor;
+pub mod stdin;
 
 // TODO: Implement input modules

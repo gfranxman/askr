@@ -1,5 +1,5 @@
-use chrono::{DateTime, NaiveDate, NaiveTime, NaiveDateTime, Utc};
-use super::super::{Validator, ValidationResult, PartialValidationResult, Priority};
+use super::super::{PartialValidationResult, Priority, ValidationResult, Validator};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 
 /// Date validator with configurable format
 #[derive(Debug)]
@@ -17,12 +17,12 @@ impl DateValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -43,29 +43,32 @@ impl Validator for DateValidator {
             }
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Basic format checking for common patterns
         if self.format == "%Y-%m-%d" && input.len() <= 10 {
             // YYYY-MM-DD format
             let chars: Vec<char> = input.chars().collect();
             for (i, ch) in chars.iter().enumerate() {
                 match i {
-                    0..=3 => { // Year digits
+                    0..=3 => {
+                        // Year digits
                         if !ch.is_ascii_digit() {
                             return PartialValidationResult::error_at(i);
                         }
                     }
-                    4 | 7 => { // Separators
+                    4 | 7 => {
+                        // Separators
                         if *ch != '-' {
                             return PartialValidationResult::error_at(i);
                         }
                     }
-                    5..=6 | 8..=9 => { // Month and day digits
+                    5..=6 | 8..=9 => {
+                        // Month and day digits
                         if !ch.is_ascii_digit() {
                             return PartialValidationResult::error_at(i);
                         }
@@ -74,14 +77,14 @@ impl Validator for DateValidator {
                 }
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "date"
     }
@@ -103,12 +106,12 @@ impl TimeValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -129,24 +132,26 @@ impl Validator for TimeValidator {
             }
         }
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Basic format checking for common patterns
         if self.format == "%H:%M:%S" && input.len() <= 8 {
             // HH:MM:SS format
             let chars: Vec<char> = input.chars().collect();
             for (i, ch) in chars.iter().enumerate() {
                 match i {
-                    0..=1 | 3..=4 | 6..=7 => { // Hour, minute, second digits
+                    0..=1 | 3..=4 | 6..=7 => {
+                        // Hour, minute, second digits
                         if !ch.is_ascii_digit() {
                             return PartialValidationResult::error_at(i);
                         }
                     }
-                    2 | 5 => { // Separators
+                    2 | 5 => {
+                        // Separators
                         if *ch != ':' {
                             return PartialValidationResult::error_at(i);
                         }
@@ -159,12 +164,14 @@ impl Validator for TimeValidator {
             let chars: Vec<char> = input.chars().collect();
             for (i, ch) in chars.iter().enumerate() {
                 match i {
-                    0..=1 | 3..=4 => { // Hour, minute digits
+                    0..=1 | 3..=4 => {
+                        // Hour, minute digits
                         if !ch.is_ascii_digit() {
                             return PartialValidationResult::error_at(i);
                         }
                     }
-                    2 => { // Separator
+                    2 => {
+                        // Separator
                         if *ch != ':' {
                             return PartialValidationResult::error_at(i);
                         }
@@ -173,14 +180,14 @@ impl Validator for TimeValidator {
                 }
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "time"
     }
@@ -202,12 +209,12 @@ impl DateTimeValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
@@ -220,14 +227,14 @@ impl Validator for DateTimeValidator {
         if let Ok(_) = NaiveDateTime::parse_from_str(input, &self.format) {
             return ValidationResult::success("datetime");
         }
-        
+
         // Try parsing as DateTime with timezone if format contains timezone info
         if self.format.contains("%z") || self.format.contains("%Z") || self.format.contains("%:z") {
             if let Ok(_) = DateTime::parse_from_str(input, &self.format) {
                 return ValidationResult::success("datetime");
             }
         }
-        
+
         let message = if let Some(msg) = &self.custom_message {
             msg.clone()
         } else {
@@ -235,44 +242,50 @@ impl Validator for DateTimeValidator {
         };
         ValidationResult::failure("datetime", self.priority, &message)
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // Basic format checking for common pattern
         if self.format == "%Y-%m-%d %H:%M:%S" && input.len() <= 19 {
             // YYYY-MM-DD HH:MM:SS format
             let chars: Vec<char> = input.chars().collect();
             for (i, ch) in chars.iter().enumerate() {
                 match i {
-                    0..=3 => { // Year digits
+                    0..=3 => {
+                        // Year digits
                         if !ch.is_ascii_digit() {
                             return PartialValidationResult::error_at(i);
                         }
                     }
-                    4 | 7 => { // Date separators
+                    4 | 7 => {
+                        // Date separators
                         if *ch != '-' {
                             return PartialValidationResult::error_at(i);
                         }
                     }
-                    5..=6 | 8..=9 => { // Month and day digits
+                    5..=6 | 8..=9 => {
+                        // Month and day digits
                         if !ch.is_ascii_digit() {
                             return PartialValidationResult::error_at(i);
                         }
                     }
-                    10 => { // Space between date and time
+                    10 => {
+                        // Space between date and time
                         if *ch != ' ' {
                             return PartialValidationResult::error_at(i);
                         }
                     }
-                    11..=12 | 14..=15 | 17..=18 => { // Hour, minute, second digits
+                    11..=12 | 14..=15 | 17..=18 => {
+                        // Hour, minute, second digits
                         if !ch.is_ascii_digit() {
                             return PartialValidationResult::error_at(i);
                         }
                     }
-                    13 | 16 => { // Time separators
+                    13 | 16 => {
+                        // Time separators
                         if *ch != ':' {
                             return PartialValidationResult::error_at(i);
                         }
@@ -281,14 +294,14 @@ impl Validator for DateTimeValidator {
                 }
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "datetime"
     }

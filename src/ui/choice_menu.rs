@@ -1,8 +1,8 @@
+use super::{ColorScheme, Colorizer, LayoutManager, Screen, Terminal};
+use crate::error::{PromptError, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use std::io::{self, stderr, Write};
 use std::time::Duration;
-use super::{Terminal, ColorScheme, Colorizer, LayoutManager, Screen};
-use crate::error::{PromptError, Result};
 
 pub struct ChoiceMenu {
     terminal: Terminal,
@@ -94,13 +94,18 @@ impl ChoiceMenu {
     fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<MenuAction> {
         match key_event {
             // Navigation with arrow keys
-            KeyEvent { code: KeyCode::Up, .. } => {
+            KeyEvent {
+                code: KeyCode::Up, ..
+            } => {
                 if self.current_index > 0 {
                     self.current_index -= 1;
                 }
                 Ok(MenuAction::Continue)
             }
-            KeyEvent { code: KeyCode::Down, .. } => {
+            KeyEvent {
+                code: KeyCode::Down,
+                ..
+            } => {
                 if self.current_index < self.choices.len() - 1 {
                     self.current_index += 1;
                 }
@@ -108,7 +113,10 @@ impl ChoiceMenu {
             }
 
             // Selection
-            KeyEvent { code: KeyCode::Enter, .. } => {
+            KeyEvent {
+                code: KeyCode::Enter,
+                ..
+            } => {
                 if self.allow_multiple {
                     // In multiple choice mode, Enter submits current selections
                     Ok(MenuAction::Submit)
@@ -121,22 +129,30 @@ impl ChoiceMenu {
             }
 
             // Toggle selection with spacebar (for multiple choice)
-            KeyEvent { code: KeyCode::Char(' '), .. } => {
+            KeyEvent {
+                code: KeyCode::Char(' '),
+                ..
+            } => {
                 if self.allow_multiple {
-                    self.selected_choices[self.current_index] = !self.selected_choices[self.current_index];
+                    self.selected_choices[self.current_index] =
+                        !self.selected_choices[self.current_index];
                 }
                 Ok(MenuAction::Continue)
             }
 
             // Cancel with Ctrl+C
-            KeyEvent { code: KeyCode::Char('c'), modifiers: KeyModifiers::CONTROL, .. } => {
-                Ok(MenuAction::Cancel)
-            }
+            KeyEvent {
+                code: KeyCode::Char('c'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => Ok(MenuAction::Cancel),
 
             // Cancel with Ctrl+D (EOF)
-            KeyEvent { code: KeyCode::Char('d'), modifiers: KeyModifiers::CONTROL, .. } => {
-                Ok(MenuAction::Cancel)
-            }
+            KeyEvent {
+                code: KeyCode::Char('d'),
+                modifiers: KeyModifiers::CONTROL,
+                ..
+            } => Ok(MenuAction::Cancel),
 
             // Ignore other keys
             _ => Ok(MenuAction::Continue),
@@ -159,18 +175,23 @@ impl ChoiceMenu {
     }
 
     fn clear_and_redraw(&self, screen: &mut Screen<io::Stderr>, prompt_text: &str) -> Result<()> {
-        use crossterm::{cursor::{MoveTo, MoveUp}, terminal::Clear, terminal::ClearType, ExecutableCommand};
+        use crossterm::{
+            cursor::{MoveTo, MoveUp},
+            terminal::Clear,
+            terminal::ClearType,
+            ExecutableCommand,
+        };
 
         // Move back to the start of the menu area (after the prompt)
         let total_menu_lines = 1 + self.choices.len() as u16; // instruction + choices
         stderr().execute(MoveUp(total_menu_lines))?;
-        
+
         // Clear from cursor down to remove old menu
         stderr().execute(Clear(ClearType::FromCursorDown))?;
-        
+
         // Redraw the menu
         self.draw_menu_content()?;
-        
+
         Ok(())
     }
 
@@ -183,10 +204,11 @@ impl ChoiceMenu {
         } else {
             "Use ↑↓ to navigate, ENTER to select:"
         };
-        
+
         // Write instruction
         let colored_instruction = self.colorizer.help_text(instruction);
-        self.colorizer.write_colored(&mut std::io::stderr(), &colored_instruction)?;
+        self.colorizer
+            .write_colored(&mut std::io::stderr(), &colored_instruction)?;
         stderr().execute(MoveToNextLine(1))?;
 
         // Draw choices
@@ -195,19 +217,29 @@ impl ChoiceMenu {
             let is_selected = self.selected_choices[i];
 
             let marker = if self.allow_multiple {
-                if is_selected { "[✓]" } else { "[ ]" }
+                if is_selected {
+                    "[✓]"
+                } else {
+                    "[ ]"
+                }
             } else {
-                if is_current { ">" } else { " " }
+                if is_current {
+                    ">"
+                } else {
+                    " "
+                }
             };
 
             let choice_text = format!("{} {}", marker, choice);
-            
+
             if is_current {
                 let colored_choice = self.colorizer.highlighted_text(&choice_text);
-                self.colorizer.write_colored(&mut std::io::stderr(), &colored_choice)?;
+                self.colorizer
+                    .write_colored(&mut std::io::stderr(), &colored_choice)?;
             } else {
                 let colored_choice = self.colorizer.valid_text(&choice_text);
-                self.colorizer.write_colored(&mut std::io::stderr(), &colored_choice)?;
+                self.colorizer
+                    .write_colored(&mut std::io::stderr(), &colored_choice)?;
             }
             stderr().execute(MoveToNextLine(1))?;
         }

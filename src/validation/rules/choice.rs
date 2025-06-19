@@ -1,4 +1,4 @@
-use super::super::{Validator, ValidationResult, PartialValidationResult, Priority};
+use super::super::{PartialValidationResult, Priority, ValidationResult, Validator};
 use std::collections::HashSet;
 
 /// Choice validator for selecting from predefined options
@@ -23,32 +23,32 @@ impl ChoiceValidator {
             custom_message: None,
         }
     }
-    
+
     pub fn case_sensitive(mut self, case_sensitive: bool) -> Self {
         self.case_sensitive = case_sensitive;
         self
     }
-    
+
     pub fn min_choices(mut self, min: usize) -> Self {
         self.min_choices = min;
         self
     }
-    
+
     pub fn max_choices(mut self, max: usize) -> Self {
         self.max_choices = max;
         self
     }
-    
+
     pub fn with_priority(mut self, priority: Priority) -> Self {
         self.priority = priority;
         self
     }
-    
+
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.custom_message = Some(message.into());
         self
     }
-    
+
     /// Parse input for multiple choices (comma-separated)
     fn parse_input(&self, input: &str) -> Vec<String> {
         if self.max_choices == 1 {
@@ -61,17 +61,19 @@ impl ChoiceValidator {
                 .collect()
         }
     }
-    
+
     /// Check if a choice matches any of the valid options
     fn is_valid_choice(&self, choice: &str) -> bool {
         if self.case_sensitive {
             self.choices.contains(&choice.to_string())
         } else {
             let choice_lower = choice.to_lowercase();
-            self.choices.iter().any(|c| c.to_lowercase() == choice_lower)
+            self.choices
+                .iter()
+                .any(|c| c.to_lowercase() == choice_lower)
         }
     }
-    
+
     /// Get the canonical form of a choice (with correct case)
     fn get_canonical_choice(&self, choice: &str) -> Option<String> {
         if self.case_sensitive {
@@ -93,7 +95,7 @@ impl ChoiceValidator {
 impl Validator for ChoiceValidator {
     fn validate(&self, input: &str) -> ValidationResult {
         let parsed_choices = self.parse_input(input);
-        
+
         // Check choice count
         if parsed_choices.len() < self.min_choices {
             let message = if let Some(msg) = &self.custom_message {
@@ -103,7 +105,7 @@ impl Validator for ChoiceValidator {
             };
             return ValidationResult::failure("choice", self.priority, &message);
         }
-        
+
         if parsed_choices.len() > self.max_choices {
             let message = if let Some(msg) = &self.custom_message {
                 msg.clone()
@@ -112,11 +114,11 @@ impl Validator for ChoiceValidator {
             };
             return ValidationResult::failure("choice", self.priority, &message);
         }
-        
+
         // Check for duplicates
         let mut seen = HashSet::new();
         let mut duplicates = Vec::new();
-        
+
         for choice in &parsed_choices {
             if let Some(canonical) = self.get_canonical_choice(choice) {
                 if !seen.insert(canonical.clone()) {
@@ -124,7 +126,7 @@ impl Validator for ChoiceValidator {
                 }
             }
         }
-        
+
         if !duplicates.is_empty() {
             let message = if let Some(msg) = &self.custom_message {
                 msg.clone()
@@ -133,7 +135,7 @@ impl Validator for ChoiceValidator {
             };
             return ValidationResult::failure("choice", self.priority, &message);
         }
-        
+
         // Check each choice validity
         let mut invalid_choices = Vec::new();
         for choice in &parsed_choices {
@@ -141,7 +143,7 @@ impl Validator for ChoiceValidator {
                 invalid_choices.push(choice.clone());
             }
         }
-        
+
         if !invalid_choices.is_empty() {
             let message = if let Some(msg) = &self.custom_message {
                 msg.clone()
@@ -155,15 +157,15 @@ impl Validator for ChoiceValidator {
             };
             return ValidationResult::failure("choice", self.priority, &message);
         }
-        
+
         ValidationResult::success("choice")
     }
-    
+
     fn partial_validate(&self, input: &str, _cursor_pos: usize) -> PartialValidationResult {
         if input.is_empty() {
             return PartialValidationResult::valid();
         }
-        
+
         // For single choice, check partial matching
         if self.max_choices == 1 {
             // Check if any choice starts with the current input
@@ -174,12 +176,12 @@ impl Validator for ChoiceValidator {
                     choice.to_lowercase().starts_with(&input.to_lowercase())
                 }
             });
-            
+
             if !has_partial_match {
                 // Find the first character where it diverges
                 for (i, _ch) in input.char_indices() {
                     let partial = &input[..=i];
-                    
+
                     let has_match = self.choices.iter().any(|choice| {
                         if self.case_sensitive {
                             choice.starts_with(partial)
@@ -187,7 +189,7 @@ impl Validator for ChoiceValidator {
                             choice.to_lowercase().starts_with(&partial.to_lowercase())
                         }
                     });
-                    
+
                     if !has_match {
                         return PartialValidationResult::error_at(i);
                     }
@@ -203,20 +205,22 @@ impl Validator for ChoiceValidator {
                         if self.case_sensitive {
                             choice.starts_with(current_choice)
                         } else {
-                            choice.to_lowercase().starts_with(&current_choice.to_lowercase())
+                            choice
+                                .to_lowercase()
+                                .starts_with(&current_choice.to_lowercase())
                         }
                     });
-                    
+
                     if !has_partial_match {
                         // Calculate position of error in the current choice
-                        let prefix_len: usize = parts[..parts.len()-1]
+                        let prefix_len: usize = parts[..parts.len() - 1]
                             .iter()
                             .map(|p| p.len() + 1) // +1 for comma
                             .sum();
-                        
+
                         for (i, _ch) in current_choice.char_indices() {
                             let partial = current_choice[..=i].trim();
-                            
+
                             let has_match = self.choices.iter().any(|choice| {
                                 if self.case_sensitive {
                                     choice.starts_with(partial)
@@ -224,7 +228,7 @@ impl Validator for ChoiceValidator {
                                     choice.to_lowercase().starts_with(&partial.to_lowercase())
                                 }
                             });
-                            
+
                             if !has_match {
                                 return PartialValidationResult::error_at(prefix_len + i);
                             }
@@ -233,14 +237,14 @@ impl Validator for ChoiceValidator {
                 }
             }
         }
-        
+
         PartialValidationResult::valid()
     }
-    
+
     fn priority(&self) -> Priority {
         self.priority
     }
-    
+
     fn name(&self) -> &str {
         "choice"
     }
