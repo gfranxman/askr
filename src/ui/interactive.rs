@@ -392,21 +392,21 @@ impl InteractivePrompt {
         // Get all potential error messages
         let messages = self.validation_engine.get_potential_error_messages();
 
-        // Calculate lines needed for each component
+        // Calculate lines needed for each component in order
         let mut total_lines = 0u16;
 
         // 1. Prompt line (always 1 line)
         total_lines += 1;
 
-        // 2. Error messages (with text wrapping)
-        for message in &messages {
-            let wrapped_lines = self.calculate_wrapped_lines(message, width);
+        // 2. Help text lines (if present)
+        if let Some(help_text) = &self.config.ui_config.help_text {
+            let wrapped_lines = self.calculate_wrapped_lines(help_text, width);
             total_lines += wrapped_lines;
         }
 
-        // 3. Help text if present
-        if let Some(help_text) = &self.config.ui_config.help_text {
-            let wrapped_lines = self.calculate_wrapped_lines(help_text, width);
+        // 3. Error messages (with text wrapping)
+        for message in &messages {
+            let wrapped_lines = self.calculate_wrapped_lines(message, width);
             total_lines += wrapped_lines;
         }
 

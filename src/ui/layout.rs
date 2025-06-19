@@ -33,13 +33,16 @@ impl LayoutManager {
     }
 
     pub fn calculate_layout(&mut self, has_help: bool) {
-        // Simple layout: prompt+input on line 0, errors below, help at bottom
+        // Logical layout: prompt line 0, help text next, then errors
         self.prompt_line = 0;
         self.input_line = 0;
-        self.error_area_start = 1;
-
+        
         if has_help {
-            self.help_line = Some(self.height.saturating_sub(1));
+            self.help_line = Some(1); // Help text right after prompt
+            self.error_area_start = 2; // Errors after help text
+        } else {
+            self.help_line = None;
+            self.error_area_start = 1; // Errors right after prompt if no help
         }
     }
 
@@ -208,8 +211,11 @@ impl<W: Write + ExecutableCommand> Screen<W> {
         // Store current cursor position to return to later
         self.writer.execute(crossterm::cursor::SavePosition)?;
 
-        // Move to the line after the prompt/input for error display
-        self.writer.execute(crossterm::cursor::MoveToNextLine(1))?;
+        // Move to the error area start position (accounts for help text)
+        let lines_to_move = self.layout.error_area_start;
+        for _ in 0..lines_to_move {
+            self.writer.execute(crossterm::cursor::MoveToNextLine(1))?;
+        }
 
         // Clear from cursor down to clear any old errors
         self.clear_from_cursor()?;
@@ -245,9 +251,20 @@ impl<W: Write + ExecutableCommand> Screen<W> {
     }
 
     pub fn write_help(&mut self, help_text: &str) -> io::Result<()> {
-        if let Some((x, y)) = self.layout.help_position() {
+        if self.layout.help_line.is_some() {
+            // Save current cursor position
+            self.writer.execute(crossterm::cursor::SavePosition)?;
+            
+            // Move to next line for help text
+            self.writer.execute(crossterm::cursor::MoveToNextLine(1))?;
+            self.writer.execute(crossterm::cursor::MoveToColumn(0))?;
+            
+            // Write help text
             let colored_help = self.colorizer.help_text(help_text);
-            self.write_at(x, y, &colored_help)?;
+            self.colorizer.write_colored(&mut self.writer, &colored_help)?;
+            
+            // Restore cursor position
+            self.writer.execute(crossterm::cursor::RestorePosition)?;
         }
         Ok(())
     }
