@@ -41,6 +41,7 @@ impl TerminalCapabilities {
         })
     }
 
+
     pub fn fallback_ui(&self) -> UIMode {
         if !self.cursor_control {
             UIMode::Simple
@@ -75,6 +76,7 @@ impl Terminal {
             original_hook: None,
         })
     }
+
 
     pub fn enter_raw_mode(&mut self) -> io::Result<()> {
         terminal::enable_raw_mode()?;

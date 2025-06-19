@@ -231,13 +231,14 @@ impl PromptConfig {
             });
         }
 
-        // Choice validation
-        if let Some(choices_str) = &args.choices {
-            let choices: Vec<String> = choices_str
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect();
+        // Choice validation - support both comma and newline separation
+        let choices_opt = if let Some(choices_str) = &args.choices {
+            Some(Self::parse_choices(choices_str))
+        } else {
+            None
+        };
 
+        if let Some(choices) = choices_opt {
             let mut parameters = HashMap::new();
             parameters.insert(
                 "case_sensitive".to_string(),
@@ -343,5 +344,25 @@ impl PromptConfig {
         }
 
         Ok((min, max))
+    }
+
+    /// Parse choices from string, supporting both comma and newline separation
+    fn parse_choices(choices_str: &str) -> Vec<String> {
+        // First try to detect if it contains newlines (prioritize over commas)
+        if choices_str.contains('\n') {
+            // Parse as newline-separated
+            choices_str
+                .lines()
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect()
+        } else {
+            // Parse as comma-separated
+            choices_str
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect()
+        }
     }
 }

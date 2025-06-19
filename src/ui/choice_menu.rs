@@ -358,6 +358,7 @@ impl ChoiceMenu {
 
         Ok(())
     }
+
 }
 
 impl Drop for ChoiceMenu {

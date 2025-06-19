@@ -4,7 +4,21 @@ use clap::{Parser, Subcommand, ValueEnum, ValueHint};
 #[derive(Parser, Debug)]
 #[command(name = "askr")]
 #[command(about = "Interactive CLI input tool with real-time validation and choice menus")]
-#[command(version = "0.1.0")]
+#[command(version = "0.1.2")]
+#[command(long_about = "Interactive CLI input tool with real-time validation and choice menus.
+
+SHELL INTEGRATION EXAMPLES:
+  # Select from files in current directory
+  askr \"Select file:\" --choices \"$(ls -1)\"
+
+  # Pick from git branches  
+  askr \"Switch to:\" --choices \"$(git branch --format='%(refname:short)')\"
+
+  # Choose from running processes
+  askr \"Kill process:\" --choices \"$(ps aux | awk '{print $11}' | sort -u)\"
+
+  # Multiple selections with constraints
+  askr \"Select files:\" --choices \"$(find . -name '*.txt')\" --min-choices 2 --max-choices 5")]
 pub struct Args {
     #[command(subcommand)]
     pub command: Option<Commands>,
@@ -142,7 +156,7 @@ pub struct PromptArgs {
     pub datetime_format: Option<String>,
 
     // Choice Validation
-    /// Comma-separated list of valid choices
+    /// Comma or newline-separated list of valid choices
     #[arg(long)]
     pub choices: Option<String>,
 
