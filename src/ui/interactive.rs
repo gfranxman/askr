@@ -519,6 +519,8 @@ impl InteractivePrompt {
                 return Some(ChoiceConfig {
                     choices: choices.clone(),
                     allow_multiple: max_choices > 1,
+                    min_choices,
+                    max_choices,
                 });
             }
         }
@@ -536,6 +538,8 @@ impl InteractivePrompt {
             terminal,
             choice_config.choices,
             choice_config.allow_multiple,
+            choice_config.min_choices,
+            choice_config.max_choices,
             self.config.ui_config.no_color,
         )?;
 
@@ -553,6 +557,8 @@ impl InteractivePrompt {
 struct ChoiceConfig {
     choices: Vec<String>,
     allow_multiple: bool,
+    min_choices: usize,
+    max_choices: usize,
 }
 
 impl Drop for InteractivePrompt {

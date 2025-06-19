@@ -141,7 +141,7 @@ askr "Password:" \
     --pattern ".*[A-Z].*" --pattern-message "Must contain uppercase letter" \
     --pattern ".*[a-z].*" --pattern-message "Must contain lowercase letter" \
     --pattern ".*[0-9].*" --pattern-message "Must contain number" \
-    --pattern ".*[!@#$%^&*].*" --pattern-message "Must contain special character" \
+    --pattern ".*[\!\@\#\$\%^&*].*" --pattern-message "Must contain special character" \
     --mask
 
 # Multi-constraint username

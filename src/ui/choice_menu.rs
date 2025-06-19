@@ -8,9 +8,13 @@ pub struct ChoiceMenu {
     terminal: Terminal,
     choices: Vec<String>,
     allow_multiple: bool,
+    min_choices: usize,
+    max_choices: usize,
     selected_choices: Vec<bool>,
     current_index: usize,
     colorizer: Colorizer,
+    validation_error: Option<String>,
+    last_content_lines: u16, // Track how many content lines were drawn last time
 }
 
 impl ChoiceMenu {
@@ -18,6 +22,8 @@ impl ChoiceMenu {
         mut terminal: Terminal,
         choices: Vec<String>,
         allow_multiple: bool,
+        min_choices: usize,
+        max_choices: usize,
         no_color: bool,
     ) -> Result<Self> {
         // Only enter raw mode if we have cursor control
@@ -38,9 +44,13 @@ impl ChoiceMenu {
             terminal,
             choices,
             allow_multiple,
+            min_choices,
+            max_choices,
             selected_choices,
             current_index: 0,
             colorizer,
+            validation_error: None,
+            last_content_lines: 0,
         })
     }
 
@@ -55,8 +65,10 @@ impl ChoiceMenu {
         // Move cursor to the reserved prompt position
         self.move_to_prompt_position(reserved_lines)?;
 
-        // Draw initial menu
+        // Validate initial state and draw menu
+        self.validate_selections();
         self.draw_menu(&mut screen, prompt_text)?;
+        self.update_content_line_count();
 
         // Input loop
         loop {
@@ -67,17 +79,20 @@ impl ChoiceMenu {
                 if let Event::Key(key_event) = event::read()? {
                     match self.handle_key_event(key_event)? {
                         MenuAction::Continue => {
+                            // Validate selections after any change
+                            self.validate_selections();
                             // Clear the area and redraw
                             self.clear_and_redraw(&mut screen, prompt_text)?;
                         }
                         MenuAction::Submit => {
-                            let selected = self.get_selected_choices();
-                            if self.allow_multiple || selected.len() == 1 {
+                            // Only submit if constraints are met
+                            if self.can_submit() {
+                                let selected = self.get_selected_choices();
                                 return Ok(selected);
-                            }
-                            // If single choice mode and no selection, continue
-                            if selected.is_empty() {
-                                self.draw_menu(&mut screen, prompt_text)?;
+                            } else {
+                                // Validation failed, update error and redraw
+                                self.validate_selections();
+                                self.clear_and_redraw(&mut screen, prompt_text)?;
                             }
                         }
                         MenuAction::Cancel => {
@@ -174,20 +189,34 @@ impl ChoiceMenu {
         Ok(())
     }
 
-    fn clear_and_redraw(&self, screen: &mut Screen<io::Stderr>, prompt_text: &str) -> Result<()> {
+    fn clear_and_redraw(&mut self, screen: &mut Screen<io::Stderr>, prompt_text: &str) -> Result<()> {
         use crossterm::{cursor::MoveUp, terminal::Clear, terminal::ClearType, ExecutableCommand};
 
-        // Move back to the start of the menu area (after the prompt)
-        let total_menu_lines = 1 + self.choices.len() as u16; // instruction + choices
-        stderr().execute(MoveUp(total_menu_lines))?;
+        // Move back using the tracked number of content lines from last draw
+        if self.last_content_lines > 0 {
+            stderr().execute(MoveUp(self.last_content_lines))?;
+        }
 
-        // Clear from cursor down to remove old menu
+        // Clear from cursor down to remove old menu content
         stderr().execute(Clear(ClearType::FromCursorDown))?;
 
-        // Redraw the menu
+        // Redraw the menu content (instruction + choices + error)
         self.draw_menu_content()?;
+        
+        // Update the line count for next time
+        self.update_content_line_count();
 
         Ok(())
+    }
+
+    /// Calculate and store how many lines the current content occupies
+    fn update_content_line_count(&mut self) {
+        let mut lines = 1; // instruction line
+        lines += self.choices.len() as u16; // choice lines
+        if self.validation_error.is_some() {
+            lines += 1; // error line
+        }
+        self.last_content_lines = lines;
     }
 
     fn draw_menu_content(&self) -> Result<()> {
@@ -195,13 +224,17 @@ impl ChoiceMenu {
 
         // Add instruction text
         let instruction = if self.allow_multiple {
-            "Use ↑↓ to navigate, SPACE to toggle, ENTER to submit:"
+            if self.min_choices == self.max_choices {
+                format!("Select exactly {} choice(s). Use ↑↓ to navigate, SPACE to toggle, ENTER to submit:", self.min_choices)
+            } else {
+                format!("Select {}-{} choice(s). Use ↑↓ to navigate, SPACE to toggle, ENTER to submit:", self.min_choices, self.max_choices)
+            }
         } else {
-            "Use ↑↓ to navigate, ENTER to select:"
+            "Use ↑↓ to navigate, ENTER to select:".to_string()
         };
 
         // Write instruction
-        let colored_instruction = self.colorizer.help_text(instruction);
+        let colored_instruction = self.colorizer.help_text(&instruction);
         self.colorizer
             .write_colored(&mut std::io::stderr(), &colored_instruction)?;
         stderr().execute(MoveToNextLine(1))?;
@@ -237,6 +270,14 @@ impl ChoiceMenu {
             stderr().execute(MoveToNextLine(1))?;
         }
 
+        // Display validation error if present
+        if let Some(error_message) = &self.validation_error {
+            stderr().execute(MoveToNextLine(1))?;
+            let colored_error = self.colorizer.error_message(error_message);
+            self.colorizer
+                .write_colored(&mut std::io::stderr(), &colored_error)?;
+        }
+
         Ok(())
     }
 
@@ -254,6 +295,25 @@ impl ChoiceMenu {
             .collect()
     }
 
+    /// Validate current selections against min/max constraints
+    fn validate_selections(&mut self) {
+        let selected_count = self.selected_choices.iter().filter(|&&s| s).count();
+        
+        self.validation_error = if selected_count < self.min_choices {
+            Some(format!("At least {} choice(s) required", self.min_choices))
+        } else if selected_count > self.max_choices {
+            Some(format!("At most {} choice(s) allowed", self.max_choices))
+        } else {
+            None
+        };
+    }
+
+    /// Check if current selections meet the constraints for submission
+    fn can_submit(&self) -> bool {
+        let selected_count = self.selected_choices.iter().filter(|&&s| s).count();
+        selected_count >= self.min_choices && selected_count <= self.max_choices
+    }
+
     fn calculate_and_reserve_space(&self, _width: u16, _prompt_text: &str) -> Result<u16> {
         use std::io::{self, Write};
 
@@ -268,7 +328,10 @@ impl ChoiceMenu {
         // 3. Choice lines
         total_lines += self.choices.len() as u16;
 
-        // 4. Buffer for spacing
+        // 4. Validation error line (if present)
+        total_lines += 1;
+
+        // 5. Buffer for spacing
         total_lines += 2;
 
         // Ensure we don't try to reserve more lines than the terminal height
