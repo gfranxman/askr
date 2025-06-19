@@ -33,16 +33,15 @@ impl LayoutManager {
     }
 
     pub fn calculate_layout(&mut self, has_help: bool) {
-        // Logical layout: prompt line 0, help text next, then errors
+        // New layout: prompt line 0, errors start at line 1, help text after errors (when errors exist)
         self.prompt_line = 0;
         self.input_line = 0;
+        self.error_area_start = 1; // Errors always start right after prompt
         
         if has_help {
-            self.help_line = Some(1); // Help text right after prompt
-            self.error_area_start = 2; // Errors after help text
+            self.help_line = Some(1); // Help text position (but only shown with errors)
         } else {
             self.help_line = None;
-            self.error_area_start = 1; // Errors right after prompt if no help
         }
     }
 
@@ -208,16 +207,13 @@ impl<W: Write + ExecutableCommand> Screen<W> {
     }
 
     pub fn write_errors(&mut self, errors: &[ValidationResult]) -> io::Result<()> {
-        // Store current cursor position to return to later
+        // Save cursor position at the start - caller will restore after help text
         self.writer.execute(crossterm::cursor::SavePosition)?;
 
-        // Move to the error area start position (accounts for help text)
-        let lines_to_move = self.layout.error_area_start;
-        for _ in 0..lines_to_move {
-            self.writer.execute(crossterm::cursor::MoveToNextLine(1))?;
-        }
-
-        // Clear from cursor down to clear any old errors
+        // Move to line after prompt (where errors start)
+        self.writer.execute(crossterm::cursor::MoveToNextLine(1))?;
+        
+        // Clear everything from here down (old errors and help text)
         self.clear_from_cursor()?;
 
         // Write each error on the following lines
@@ -244,16 +240,15 @@ impl<W: Write + ExecutableCommand> Screen<W> {
             }
         }
 
-        // Restore cursor to original position (the input line)
-        self.writer.execute(crossterm::cursor::RestorePosition)?;
+        // DON'T restore cursor here - let the caller handle final cursor positioning
+        // after help text is written
 
         Ok(())
     }
 
     pub fn write_help(&mut self, help_text: &str) -> io::Result<()> {
         if self.layout.help_line.is_some() {
-            // Save current cursor position
-            self.writer.execute(crossterm::cursor::SavePosition)?;
+            // Help text is written at the current cursor position (after errors)
             
             // Move to next line for help text
             self.writer.execute(crossterm::cursor::MoveToNextLine(1))?;
@@ -262,10 +257,12 @@ impl<W: Write + ExecutableCommand> Screen<W> {
             // Write help text
             let colored_help = self.colorizer.help_text(help_text);
             self.colorizer.write_colored(&mut self.writer, &colored_help)?;
-            
-            // Restore cursor position
-            self.writer.execute(crossterm::cursor::RestorePosition)?;
         }
+        Ok(())
+    }
+
+    pub fn restore_saved_cursor(&mut self) -> io::Result<()> {
+        self.writer.execute(crossterm::cursor::RestorePosition)?;
         Ok(())
     }
 

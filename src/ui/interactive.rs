@@ -71,9 +71,7 @@ impl InteractivePrompt {
         // Draw initial screen
         let prompt_width = screen.write_prompt(&prompt_text)?;
 
-        if let Some(help_text) = &self.config.ui_config.help_text {
-            screen.write_help(help_text)?;
-        }
+        // Don't write help text initially - only show it when there are validation errors
 
         screen.flush()?;
 
@@ -479,10 +477,23 @@ impl InteractivePrompt {
             // Get validation results
             let errors = self.validation_engine.get_display_errors(input, Some(10));
 
-            // Write errors below the input (this handles cursor positioning internally)
-            screen.write_errors(&errors)?;
+            // Write errors below the input and help text if there are errors
+            if !errors.is_empty() {
+                screen.write_errors(&errors)?;
+                
+                if let Some(help_text) = &self.config.ui_config.help_text {
+                    screen.write_help(help_text)?;
+                }
+                
+                // Restore cursor to the prompt line
+                screen.restore_saved_cursor()?;
+            } else {
+                // Clear any existing errors/help text when input is valid
+                screen.write_errors(&errors)?; // This will clear the area
+                screen.restore_saved_cursor()?;
+            }
 
-            // Position cursor at the correct input position after error display
+            // Position cursor at the correct input position after all display updates
             screen.position_cursor_at_input_pos(input, cursor_pos, prompt_width)?;
 
             screen.flush()?;
