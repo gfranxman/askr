@@ -78,18 +78,16 @@ release-dry: ## Dry run of crates.io release
 	@echo "$(BLUE)Dry run release to crates.io...$(RESET)"
 	$(CARGO) publish --dry-run
 
-release: ## Publish to crates.io
-	@echo "$(YELLOW)Publishing $(BINARY_NAME) v$(VERSION) to crates.io...$(RESET)"
-	@echo "$(RED)Warning: This will publish to crates.io!$(RESET)"
-	@read -p "Continue? [y/N] " -n 1 -r; \
-	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		echo ""; \
-		$(CARGO) publish; \
-		echo "$(GREEN)Successfully published to crates.io!$(RESET)"; \
-	else \
-		echo ""; \
-		echo "$(YELLOW)Release cancelled.$(RESET)"; \
-	fi
+release: ## DEPRECATED: Use 'make tag' instead for CI-driven releases
+	@echo "$(RED)❌ Direct publishing is deprecated!$(RESET)"
+	@echo "$(YELLOW)Use the new CI-driven release process:$(RESET)"
+	@echo "  1. $(BLUE)make release-dry$(RESET)     # Verify package"
+	@echo "  2. $(BLUE)git add Cargo.toml Cargo.lock$(RESET)"
+	@echo "  3. $(BLUE)git commit -m 'Bump version to v$(VERSION)'$(RESET)"
+	@echo "  4. $(BLUE)make tag$(RESET)            # Creates tag and triggers CI release"
+	@echo ""
+	@echo "$(GREEN)✅ This ensures CI validation before publishing to crates.io$(RESET)"
+	@exit 1
 
 tag: ## Create and push a git tag for current version
 	@echo "$(BLUE)Creating tag v$(VERSION)...$(RESET)"
@@ -198,8 +196,21 @@ bump-major: ## Bump major version (X.y.z)
 
 # Release workflow
 release-workflow: ci-check release-dry ## Run complete release checks
-	@echo "$(GREEN)Release workflow complete. Ready to publish!$(RESET)"
-	@echo "$(YELLOW)Run 'make release' to publish to crates.io$(RESET)"
+	@echo "$(GREEN)Release workflow complete. Ready to tag and release!$(RESET)"
+	@echo "$(YELLOW)Next steps:$(RESET)"
+	@echo "  1. $(BLUE)git add Cargo.toml Cargo.lock$(RESET)"
+	@echo "  2. $(BLUE)git commit -m 'Bump version to v$(VERSION)'$(RESET)"
+	@echo "  3. $(BLUE)make tag$(RESET)  # This triggers CI-driven release"
+
+prepare-release: ## Prepare a new release (bump version, run checks)
+	@echo "$(BLUE)Preparing release for $(BINARY_NAME)...$(RESET)"
+	@echo "$(YELLOW)Current version: $(VERSION)$(RESET)"
+	@echo ""
+	@echo "$(BLUE)1. Update version in Cargo.toml manually$(RESET)"
+	@echo "$(BLUE)2. Run: make release-workflow$(RESET)"
+	@echo "$(BLUE)3. Run: make tag$(RESET)"
+	@echo ""
+	@echo "$(GREEN)✅ CI will handle testing and publishing automatically$(RESET)"
 
 # Quick targets for common tasks
 all: clean build test lint ## Clean, build, test, and lint

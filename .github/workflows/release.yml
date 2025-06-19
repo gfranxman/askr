@@ -92,9 +92,26 @@ jobs:
     name: Publish to crates.io
     needs: create-release
     runs-on: ubuntu-latest
-    if: false  # Disabled since already published manually
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Wait for CI to pass
+      uses: lewagon/wait-on-check-action@v1.3.1
+      with:
+        ref: ${{ github.ref }}
+        check-name: 'Test'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        wait-interval: 10
+        allowed-conclusions: success
+        
+    - name: Wait for Security audit to pass
+      uses: lewagon/wait-on-check-action@v1.3.1
+      with:
+        ref: ${{ github.ref }}
+        check-name: 'Security audit'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        wait-interval: 10
+        allowed-conclusions: success
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
