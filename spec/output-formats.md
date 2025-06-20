@@ -16,10 +16,10 @@ The tool supports multiple output formats to accommodate different use cases, fr
 ### Usage Examples
 ```bash
 # Simple assignment
-hostname=$(prompt "Enter hostname:" --validate-hostname)
+hostname=$(askr "Enter hostname:" --validate-hostname)
 
 # With error checking
-if hostname=$(prompt "Enter hostname:" --validate-hostname); then
+if hostname=$(askr "Enter hostname:" --validate-hostname); then
     echo "Connecting to $hostname"
     ssh user@$hostname
 else
@@ -28,7 +28,7 @@ else
 fi
 
 # Capture both value and exit status
-hostname=$(prompt "Enter hostname:" --validate-hostname)
+hostname=$(askr "Enter hostname:" --validate-hostname)
 exit_code=$?
 if [ $exit_code -eq 0 ]; then
     echo "Valid hostname: $hostname"
@@ -127,7 +127,7 @@ fi
 ### Usage Examples
 ```bash
 # Parse with jq
-result=$(prompt "Email:" --validate-email --output json)
+result=$(askr "Email:" --validate-email --output json)
 email=$(echo "$result" | jq -r '.value')
 valid=$(echo "$result" | jq -r '.valid')
 
@@ -139,7 +139,7 @@ else
 fi
 
 # Extract validation details
-result=$(prompt "Password:" --min-length 8 --pattern ".*[A-Z].*" --output json)
+result=$(askr "Password:" --min-length 8 --pattern ".*[A-Z].*" --output json)
 failed_rules=$(echo "$result" | jq -r '.validation_results[] | select(.passed == false) | .rule')
 ```
 
@@ -157,7 +157,7 @@ Debug mode that shows exactly what the user typed without any processing or vali
 ### Usage Examples
 ```bash
 # Debug what user actually typed
-raw_input=$(prompt "Enter text:" --output raw)
+raw_input=$(askr "Enter text:" --output raw)
 echo "User typed: '$raw_input'"
 echo "Length: ${#raw_input}"
 echo "Hex dump: $(echo -n "$raw_input" | xxd)"
@@ -174,11 +174,11 @@ echo "Hex dump: $(echo -n "$raw_input" | xxd)"
 ### Usage Examples
 ```bash
 # Single validation
-echo "test@example.com" | prompt --validate-email --quiet
+echo "test@example.com" | askr --validate-email --quiet
 
 # Batch processing
 cat emails.txt | while read email; do
-    if echo "$email" | prompt --validate-email --quiet; then
+    if echo "$email" | askr --validate-email --quiet; then
         echo "Valid: $email"
     else
         echo "Invalid: $email" >&2
@@ -187,7 +187,7 @@ done
 
 # With JSON output for batch processing
 cat hostnames.txt | while read hostname; do
-    result=$(echo "$hostname" | prompt --validate-hostname --quiet --output json)
+    result=$(echo "$hostname" | askr --validate-hostname --quiet --output json)
     valid=$(echo "$result" | jq -r '.valid')
     if [ "$valid" = "true" ]; then
         echo "✅ $hostname"
@@ -211,7 +211,7 @@ done
 ### Exit Code Usage
 ```bash
 # Simple success/failure
-prompt "Name:" --required
+askr "Name:" --required
 case $? in
     0) echo "Success" ;;
     1) echo "Invalid input" ;;
@@ -222,13 +222,13 @@ case $? in
 esac
 
 # In conditionals
-if prompt "Continue?" --choices "yes,no" --quiet <<< "yes"; then
+if askr "Continue?" --choices "yes,no" --quiet <<< "yes"; then
     echo "Proceeding..."
 fi
 
 # Choice validation with custom separators
-env=$(prompt "Environment:" --choices "dev,staging,prod")
-modules=$(prompt "Modules:" --choices "auth;db;api" --choice-separator ";" --selection-separator " | " --max-choices 2)
+env=$(askr "Environment:" --choices "dev,staging,prod")
+modules=$(askr "Modules:" --choices "auth;db;api" --choice-separator ";" --selection-separator " | " --max-choices 2)
 ```
 
 ## Stream Handling
@@ -249,14 +249,14 @@ modules=$(prompt "Modules:" --choices "auth;db;api" --choice-separator ";" --sel
 ### Examples
 ```bash
 # Redirect streams appropriately
-valid_email=$(prompt "Email:" --validate-email 2>/dev/null)
+valid_email=$(askr "Email:" --validate-email 2>/dev/null)
 if [ $? -eq 0 ]; then
     echo "Got email: $valid_email"
 fi
 
 # Capture errors separately
 {
-    hostname=$(prompt "Hostname:" --validate-hostname)
+    hostname=$(askr "Hostname:" --validate-hostname)
 } 2>error.log
 
 if [ $? -ne 0 ]; then

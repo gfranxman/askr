@@ -1,4 +1,4 @@
-# Prompt CLI Tool - Project Overview
+# Askr CLI Tool - Project Overview
 
 ## Project Description
 
@@ -24,28 +24,28 @@ A command-line tool for interactively prompting users for input with real-time v
 ### Shell Script Integration
 ```bash
 # Interactive hostname collection
-hostname=$(prompt "Enter hostname:" --validate-hostname) || exit 1
+hostname=$(askr "Enter hostname:" --validate-hostname) || exit 1
 ssh user@$hostname
 
 # Form-like data collection
-name=$(prompt "Full name:" --required --max-length 100)
-email=$(prompt "Email:" --validate-email --required)
+name=$(askr "Full name:" --required --max-length 100)
+email=$(askr "Email:" --validate-email --required)
 ```
 
 ### Batch Validation
 ```bash
 # Validate list of inputs
 cat emails.txt | while read email; do
-    echo "$email" | prompt --validate-email --quiet || echo "Invalid: $email"
+    echo "$email" | askr --validate-email --quiet || echo "Invalid: $email"
 done
 ```
 
 ### Complex Form Workflows
 ```bash
 # Multi-step configuration with validation
-config_file=$(prompt "Config file:" --file-exists --required)
-port=$(prompt "Port:" --number --range 1024-65535)
-ssl=$(prompt "Enable SSL:" --choices "yes,no" --default "yes")
+config_file=$(askr "Config file:" --file-exists --required)
+port=$(askr "Port:" --number --range 1024-65535)
+ssl=$(askr "Enable SSL:" --choices "yes,no" --default "yes")
 ```
 
 ## Key Features

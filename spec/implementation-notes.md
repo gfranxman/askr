@@ -367,7 +367,7 @@ pub struct PluginManager {
 
 ### Configuration Language
 ```yaml
-# ~/.prompt/config.yaml
+# ~/.askr/config.yaml
 validators:
   email:
     priority: high

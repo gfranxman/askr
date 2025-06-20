@@ -152,7 +152,7 @@ struct PartialValidationResult {
 
 #### External Command Validator
 ```bash
-prompt "Username:" --validate-cmd "check_username.sh" --validate-cmd-message "Username not available"
+askr "Username:" --validate-cmd "check_username.sh" --validate-cmd-message "Username not available"
 ```
 
 #### Async Validators
@@ -216,7 +216,7 @@ prompt "Username:" --validate-cmd "check_username.sh" --validate-cmd-message "Us
 #### Rule Groups
 ```bash
 # Password validation group
-prompt "Password:" \
+askr "Password:" \
     --required \
     --min-length 8 --length-priority medium \
     --pattern ".*[A-Z].*" --pattern-message "Must contain uppercase" --pattern-priority high \
