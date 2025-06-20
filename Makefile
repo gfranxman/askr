@@ -204,7 +204,7 @@ release-workflow: ci-check release-dry ## Run complete release checks
 	@echo "  3. $(BLUE)make tag$(RESET)  # This triggers CI-driven release"
 
 # Complete release targets (bump + test + commit + tag)
-release-patch: ## Complete patch release (bump patch, test, commit, tag)
+release-patch: ## Complete patch release (bump patch, test, commit, push, tag)
 	@echo "$(BOLD)🚀 Starting patch release process...$(RESET)"
 	@current=$$(grep '^version =' Cargo.toml | head -1 | cut -d '"' -f 2); \
 	echo "$(YELLOW)Current version: $$current$(RESET)"; \
@@ -215,11 +215,13 @@ release-patch: ## Complete patch release (bump patch, test, commit, tag)
 	echo "$(BLUE)Committing version bump...$(RESET)"; \
 	git add Cargo.toml Cargo.lock; \
 	git commit -m "Bump version to v$$new"; \
+	echo "$(BLUE)Pushing commits to origin...$(RESET)"; \
+	git push origin; \
 	echo "$(BLUE)Creating and pushing tag...$(RESET)"; \
 	$(MAKE) tag; \
 	echo "$(GREEN)✅ Patch release v$$new complete! CI will handle publishing.$(RESET)"
 
-release-minor: ## Complete minor release (bump minor, test, commit, tag)
+release-minor: ## Complete minor release (bump minor, test, commit, push, tag)
 	@echo "$(BOLD)🚀 Starting minor release process...$(RESET)"
 	@current=$$(grep '^version =' Cargo.toml | head -1 | cut -d '"' -f 2); \
 	echo "$(YELLOW)Current version: $$current$(RESET)"; \
@@ -230,11 +232,13 @@ release-minor: ## Complete minor release (bump minor, test, commit, tag)
 	echo "$(BLUE)Committing version bump...$(RESET)"; \
 	git add Cargo.toml Cargo.lock; \
 	git commit -m "Bump version to v$$new"; \
+	echo "$(BLUE)Pushing commits to origin...$(RESET)"; \
+	git push origin; \
 	echo "$(BLUE)Creating and pushing tag...$(RESET)"; \
 	$(MAKE) tag; \
 	echo "$(GREEN)✅ Minor release v$$new complete! CI will handle publishing.$(RESET)"
 
-release-major: ## Complete major release (bump major, test, commit, tag)
+release-major: ## Complete major release (bump major, test, commit, push, tag)
 	@echo "$(BOLD)🚀 Starting major release process...$(RESET)"
 	@current=$$(grep '^version =' Cargo.toml | head -1 | cut -d '"' -f 2); \
 	echo "$(YELLOW)Current version: $$current$(RESET)"; \
@@ -245,6 +249,8 @@ release-major: ## Complete major release (bump major, test, commit, tag)
 	echo "$(BLUE)Committing version bump...$(RESET)"; \
 	git add Cargo.toml Cargo.lock; \
 	git commit -m "Bump version to v$$new"; \
+	echo "$(BLUE)Pushing commits to origin...$(RESET)"; \
+	git push origin; \
 	echo "$(BLUE)Creating and pushing tag...$(RESET)"; \
 	$(MAKE) tag; \
 	echo "$(GREEN)✅ Major release v$$new complete! CI will handle publishing.$(RESET)"
