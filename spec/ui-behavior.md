@@ -8,7 +8,7 @@ The prompt intelligently reserves screen space to provide a stable UI experience
 
 #### Space Reservation Algorithm
 1. **Calculate required space**: Analyze all validators to determine maximum possible error messages
-2. **Account for text wrapping**: Calculate line wrapping based on terminal width  
+2. **Account for text wrapping**: Calculate line wrapping based on terminal width
 3. **Reserve terminal lines**: Print blank lines to claim screen real estate
 4. **Position prompt**: Move cursor back up to reserved prompt position
 5. **Stable display**: All validation content appears within reserved space

@@ -12,13 +12,13 @@ SHELL INTEGRATION EXAMPLES:
   # Select from files in current directory
   askr \"Select file:\" --choices \"$(ls -1)\"
 
-  # Pick from git branches  
+  # Pick from git branches
   askr \"Switch to:\" --choices \"$(git branch --format='%(refname:short)')\"
 
   # Git tags with space-delimited output
   askr \"Select tags:\" --choices \"$(git tag)\" --selection-separator \" \" --min-choices 2
 
-  # Semicolon input, pipe output for modules  
+  # Semicolon input, pipe output for modules
   askr \"Pick modules:\" --choices \"auth;db;api;ui\" --choice-separator \";\" --selection-separator \" | \"
 
   # Custom delimiters for file selection
@@ -80,7 +80,7 @@ pub struct PromptArgs {
     #[arg(long)]
     pub max_length: Option<usize>,
 
-    /// Minimum character length  
+    /// Minimum character length
     #[arg(long)]
     pub min_length: Option<usize>,
 

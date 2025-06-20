@@ -30,7 +30,7 @@ echo "Test 1: File exists validator"
 echo "Result: $?"
 echo ""
 
-echo "Test 2: Choice validator" 
+echo "Test 2: Choice validator"
 ./target/debug/prompt --choices "red,green,blue" "Pick a color:"
 echo "Result: $?"
 echo ""

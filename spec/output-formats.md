@@ -62,7 +62,7 @@ fi
       "message": null
     },
     {
-      "rule": "email_format", 
+      "rule": "email_format",
       "passed": true,
       "priority": "high",
       "message": null
@@ -70,7 +70,7 @@ fi
     {
       "rule": "max_length",
       "passed": true,
-      "priority": "medium", 
+      "priority": "medium",
       "message": null
     }
   ]
@@ -89,7 +89,7 @@ fi
       "description": "The input value provided by the user"
     },
     "valid": {
-      "type": "boolean", 
+      "type": "boolean",
       "description": "Whether the input passed all validation rules"
     },
     "error": {

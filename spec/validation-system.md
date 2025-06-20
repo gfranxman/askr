@@ -77,7 +77,7 @@ struct PartialValidationResult {
 - **Priority**: Medium (configurable)
 - **Types**: MinLength, MaxLength, ExactLength
 - **Logic**: Character count validation
-- **Messages**: 
+- **Messages**:
   - "Minimum length is {min} characters (currently {actual})"
   - "Maximum length is {max} characters (currently {actual})"
 
@@ -116,7 +116,7 @@ struct PartialValidationResult {
 - **Priority**: High for format, Medium for range
 - **Types**: Integer, Float, Range, Positive, Negative
 - **Logic**: Numeric parsing and constraint checking
-- **Messages**: 
+- **Messages**:
   - "Must be a valid number"
   - "Must be between {min} and {max}"
   - "Must be a positive/negative number"
@@ -144,7 +144,7 @@ struct PartialValidationResult {
 - **Priority**: High
 - **Types**: FileExists, DirExists, PathExists, Readable, Writable, Executable
 - **Logic**: File system checks with appropriate permissions
-- **Messages**: 
+- **Messages**:
   - "File does not exist: {path}"
   - "Directory is not writable: {path}"
 

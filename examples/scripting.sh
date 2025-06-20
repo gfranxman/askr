@@ -107,9 +107,9 @@ if [ "$target" != "local" ]; then
     instance_type=$(askr "Instance type:" \
         --choices "t3.micro,t3.small,t3.medium,t3.large" \
         --default "t3.small")
-    
+
     scaling=$(askr "Auto-scaling enabled?" --choices "yes,no" --default "yes")
-    
+
     if [ "$scaling" = "yes" ]; then
         min_instances=$(askr "Minimum instances:" --integer --range 1-10 --default "1")
         max_instances=$(askr "Maximum instances:" --integer --range 1-100 --default "5")

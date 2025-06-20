@@ -19,7 +19,7 @@ repos:
         language: system
         types: [rust]
         pass_filenames: false
-      
+
       - id: clippy
         name: Rust linting
         description: Lint Rust code with clippy

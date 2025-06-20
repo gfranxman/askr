@@ -12,7 +12,7 @@
   - Terminal size detection
   - Event handling (key presses, resize)
 
-#### CLI Parsing  
+#### CLI Parsing
 - **clap** (^4.4): Command-line argument parsing
   - Derive macros for clean CLI definition
   - Validation of argument combinations
@@ -88,7 +88,7 @@ src/
 ├── input/
 │   ├── mod.rs          # Input handling orchestration
 │   ├── interactive.rs  # Interactive input collection
-│   ├── stdin.rs        # Stdin input for quiet mode  
+│   ├── stdin.rs        # Stdin input for quiet mode
 │   └── processor.rs    # Input processing and normalization
 └── error.rs            # Error types and handling
 ```
@@ -175,19 +175,19 @@ impl InteractivePrompt {
     fn calculate_and_reserve_space(&self, width: u16, prompt_text: &str) -> Result<u16> {
         // Get all potential error messages by testing validators
         let messages = self.validation_engine.get_potential_error_messages();
-        
+
         // Calculate space needed including text wrapping
         let mut total_lines = 1; // prompt line
         for message in &messages {
             total_lines += self.calculate_wrapped_lines(message, width);
         }
-        
+
         // Reserve space and position cursor
         self.print_blank_lines(total_lines)?;
         self.move_cursor_up(total_lines)?;
         Ok(total_lines)
     }
-    
+
     fn get_potential_error_messages(&self) -> Vec<String> {
         // Test validators with various inputs to discover all possible errors
         // This enables accurate space calculation before user interaction
@@ -239,22 +239,22 @@ impl KeyEventHandler {
 pub enum PromptError {
     #[error("Invalid CLI arguments: {0}")]
     InvalidArguments(String),
-    
+
     #[error("Validation failed: {0}")]
     ValidationFailed(String),
-    
+
     #[error("Terminal error: {0}")]
     Terminal(#[from] crossterm::ErrorKind),
-    
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
-    
+
     #[error("Timeout exceeded")]
     Timeout,
-    
+
     #[error("User interrupted")]
     Interrupted,
-    
+
     #[error("Maximum attempts exceeded")]
     MaxAttemptsExceeded,
 }
@@ -372,7 +372,7 @@ validators:
   email:
     priority: high
     message: "Please enter a valid email address"
-  
+
   strong_password:
     rules:
       - min_length: 12

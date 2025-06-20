@@ -192,7 +192,7 @@ impl ValidationEngine {
             // Try various test inputs to trigger different error conditions
             let test_inputs = vec![
                 "", // Empty input
-                "x", // Minimal input  
+                "x", // Minimal input
                 "this is a very long input string that will likely fail most validators and show their error messages",
                 "invalid-format-123!@#", // Invalid format
             ];

@@ -178,7 +178,7 @@ tags=$(askr "Select tags:" --choices "$(git tag)" --selection-separator " " --mi
 # Semicolon input, pipe output for modules
 modules=$(askr "Pick modules:" --choices "auth;db;api;ui" --choice-separator ";" --selection-separator " | ")
 
-# Custom delimiters for file selection  
+# Custom delimiters for file selection
 files=$(askr "Choose files:" --choices "$(find . -name '*.rs')" --selection-separator " " --max-choices 5)
 
 # Specialized workflows with custom separators

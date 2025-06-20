@@ -242,13 +242,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut engine = ValidationEngine::new();
     engine.add_validator(Box::new(RequiredValidator::new()));
     engine.add_validator(Box::new(EmailValidator::new()));
-    
+
     let terminal = Terminal::new()?;
     let mut prompt = InteractivePrompt::new(terminal, engine, config)?;
-    
+
     let email = prompt.prompt()?;
     println!("Email: {}", email);
-    
+
     Ok(())
 }
 ```

@@ -152,14 +152,14 @@ mod tests {
         // Arrange
         let input = "test@example.com";
         let validator = EmailValidator::new();
-        
+
         // Act
         let result = validator.validate(input);
-        
+
         // Assert
         assert!(result.is_valid());
     }
-    
+
     #[test]
     fn test_feature_failure_case() {
         // Test failure scenarios
@@ -177,18 +177,18 @@ mod tests {
 
 ```rust
 /// Validates email addresses according to RFC standards.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```
 /// use askr::EmailValidator;
-/// 
+///
 /// let validator = EmailValidator::new();
 /// assert!(validator.validate("user@example.com").is_valid());
 /// ```
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns validation error if the input is not a valid email format.
 pub fn validate(&self, input: &str) -> ValidationResult {
     // Implementation
