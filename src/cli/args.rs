@@ -8,6 +8,16 @@ use clap::{Parser, Subcommand, ValueEnum, ValueHint};
 #[command(
     long_about = "Interactive CLI input tool with real-time validation and choice menus.
 
+ENVIRONMENT VARIABLES:
+  ASKR_NO_COLOR      Disable colored output (same as --no-color)
+  ASKR_WIDTH         Set default display width in columns
+  ASKR_TIMEOUT       Set default timeout in seconds
+
+  Example:
+    export ASKR_NO_COLOR=1
+    export ASKR_WIDTH=120
+    export ASKR_TIMEOUT=30
+
 SHELL INTEGRATION EXAMPLES:
   # Select from files in current directory
   askr \"Select file:\" --choices \"$(ls -1)\"
