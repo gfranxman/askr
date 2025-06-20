@@ -120,7 +120,18 @@ impl InteractivePrompt {
                             // Final validation
                             let summary = self.validation_engine.validate(&input);
                             if summary.valid {
-                                return Ok(input);
+                                // Handle confirmation if required
+                                if self.config.interaction_config.require_confirmation {
+                                    match self.prompt_confirmation(&input)? {
+                                        Some(confirmed_input) => return Ok(confirmed_input),
+                                        None => {
+                                            // Confirmation failed, continue with original input loop
+                                            continue;
+                                        }
+                                    }
+                                } else {
+                                    return Ok(input);
+                                }
                             } else {
                                 attempts += 1;
                                 if attempts >= max_attempts {
@@ -358,13 +369,8 @@ impl InteractivePrompt {
                 *input = chars.iter().collect();
                 *cursor_pos += 1;
 
-                // Handle masking for passwords
-                if self.config.interaction_config.mask_input {
-                    let masked = "*".repeat(input.chars().count());
-                    self.redraw_input(&masked, cursor_pos, screen, prompt_width)?;
-                } else {
-                    self.redraw_input(input, cursor_pos, screen, prompt_width)?;
-                }
+                // Redraw input (masking handled in redraw_input method)
+                self.redraw_input(input, cursor_pos, screen, prompt_width)?;
                 Ok(InputAction::Continue)
             }
 
@@ -380,7 +386,12 @@ impl InteractivePrompt {
         screen: &mut Screen<io::Stderr>,
         prompt_width: u16,
     ) -> Result<()> {
-        screen.write_input(input, prompt_width, None)?;
+        let display_input = if self.config.interaction_config.mask_input {
+            "*".repeat(input.chars().count())
+        } else {
+            input.to_string()
+        };
+        screen.write_input(&display_input, prompt_width, None)?;
         Ok(())
     }
 
@@ -500,6 +511,38 @@ impl InteractivePrompt {
         }
 
         Ok(())
+    }
+
+    fn prompt_confirmation(&mut self, original_input: &str) -> Result<Option<String>> {
+        use std::io::{self, Write};
+        
+        // Print newline and confirmation prompt
+        eprintln!();
+        eprint!("Confirm input: ");
+        io::stderr().flush()?;
+        
+        // Create a new terminal instance for confirmation prompt
+        let terminal = Terminal::new()?;
+        let engine = ValidationEngine::new(); // No validation for confirmation, just matching
+        
+        // Create a simplified config for confirmation prompt
+        let mut confirmation_config = self.config.clone();
+        confirmation_config.prompt_text = Some("Confirm input:".to_string());
+        confirmation_config.validation_rules.clear(); // No validation rules for confirmation
+        confirmation_config.interaction_config.require_confirmation = false; // Avoid infinite recursion
+        confirmation_config.interaction_config.mask_input = self.config.interaction_config.mask_input; // Keep same masking behavior
+        
+        let mut confirmation_prompt = InteractivePrompt::new(terminal, engine, confirmation_config)?;
+        let confirmation_input = confirmation_prompt.prompt()?;
+        
+        // Check if inputs match
+        if original_input == confirmation_input {
+            Ok(Some(original_input.to_string()))
+        } else {
+            // Print mismatch error to stderr and return None to retry
+            eprintln!("Error: Inputs do not match. Please try again.");
+            Ok(None)
+        }
     }
 
     fn find_choice_validator(&self) -> Option<ChoiceConfig> {
