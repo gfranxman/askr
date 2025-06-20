@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand, ValueEnum, ValueHint};
 #[derive(Parser, Debug)]
 #[command(name = "askr")]
 #[command(about = "Interactive CLI input tool with real-time validation and choice menus")]
-#[command(version = "0.1.2")]
+#[command(version = env!("CARGO_PKG_VERSION"))]
 #[command(
     long_about = "Interactive CLI input tool with real-time validation and choice menus.
 
