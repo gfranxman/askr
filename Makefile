@@ -4,6 +4,7 @@
 .PHONY: help build test clean lint fmt check install uninstall
 .PHONY: release-dry release tag docs examples
 .PHONY: completion completions pre-commit setup
+.PHONY: release-patch release-minor release-major
 .DEFAULT_GOAL := help
 
 # Build configuration
@@ -202,15 +203,62 @@ release-workflow: ci-check release-dry ## Run complete release checks
 	@echo "  2. $(BLUE)git commit -m 'Bump version to v$(VERSION)'$(RESET)"
 	@echo "  3. $(BLUE)make tag$(RESET)  # This triggers CI-driven release"
 
+# Complete release targets (bump + test + commit + tag)
+release-patch: ## Complete patch release (bump patch, test, commit, tag)
+	@echo "$(BOLD)🚀 Starting patch release process...$(RESET)"
+	@current=$$(grep '^version =' Cargo.toml | head -1 | cut -d '"' -f 2); \
+	echo "$(YELLOW)Current version: $$current$(RESET)"; \
+	$(MAKE) bump-patch; \
+	new=$$(grep '^version =' Cargo.toml | head -1 | cut -d '"' -f 2); \
+	echo "$(BLUE)Running release workflow for v$$new...$(RESET)"; \
+	$(MAKE) release-workflow; \
+	echo "$(BLUE)Committing version bump...$(RESET)"; \
+	git add Cargo.toml Cargo.lock; \
+	git commit -m "Bump version to v$$new"; \
+	echo "$(BLUE)Creating and pushing tag...$(RESET)"; \
+	$(MAKE) tag; \
+	echo "$(GREEN)✅ Patch release v$$new complete! CI will handle publishing.$(RESET)"
+
+release-minor: ## Complete minor release (bump minor, test, commit, tag)
+	@echo "$(BOLD)🚀 Starting minor release process...$(RESET)"
+	@current=$$(grep '^version =' Cargo.toml | head -1 | cut -d '"' -f 2); \
+	echo "$(YELLOW)Current version: $$current$(RESET)"; \
+	$(MAKE) bump-minor; \
+	new=$$(grep '^version =' Cargo.toml | head -1 | cut -d '"' -f 2); \
+	echo "$(BLUE)Running release workflow for v$$new...$(RESET)"; \
+	$(MAKE) release-workflow; \
+	echo "$(BLUE)Committing version bump...$(RESET)"; \
+	git add Cargo.toml Cargo.lock; \
+	git commit -m "Bump version to v$$new"; \
+	echo "$(BLUE)Creating and pushing tag...$(RESET)"; \
+	$(MAKE) tag; \
+	echo "$(GREEN)✅ Minor release v$$new complete! CI will handle publishing.$(RESET)"
+
+release-major: ## Complete major release (bump major, test, commit, tag)
+	@echo "$(BOLD)🚀 Starting major release process...$(RESET)"
+	@current=$$(grep '^version =' Cargo.toml | head -1 | cut -d '"' -f 2); \
+	echo "$(YELLOW)Current version: $$current$(RESET)"; \
+	$(MAKE) bump-major; \
+	new=$$(grep '^version =' Cargo.toml | head -1 | cut -d '"' -f 2); \
+	echo "$(BLUE)Running release workflow for v$$new...$(RESET)"; \
+	$(MAKE) release-workflow; \
+	echo "$(BLUE)Committing version bump...$(RESET)"; \
+	git add Cargo.toml Cargo.lock; \
+	git commit -m "Bump version to v$$new"; \
+	echo "$(BLUE)Creating and pushing tag...$(RESET)"; \
+	$(MAKE) tag; \
+	echo "$(GREEN)✅ Major release v$$new complete! CI will handle publishing.$(RESET)"
+
 prepare-release: ## Prepare a new release (bump version, run checks)
 	@echo "$(BLUE)Preparing release for $(BINARY_NAME)...$(RESET)"
 	@echo "$(YELLOW)Current version: $(VERSION)$(RESET)"
 	@echo ""
-	@echo "$(BLUE)1. Update version in Cargo.toml manually$(RESET)"
-	@echo "$(BLUE)2. Run: make release-workflow$(RESET)"
-	@echo "$(BLUE)3. Run: make tag$(RESET)"
+	@echo "$(BLUE)Quick release options:$(RESET)"
+	@echo "  $(GREEN)make release-patch$(RESET)  # Bug fixes ($(VERSION) → patch bump)"
+	@echo "  $(GREEN)make release-minor$(RESET)  # New features ($(VERSION) → minor bump)"
+	@echo "  $(GREEN)make release-major$(RESET)  # Breaking changes ($(VERSION) → major bump)"
 	@echo ""
-	@echo "$(GREEN)✅ CI will handle testing and publishing automatically$(RESET)"
+	@echo "$(GREEN)✅ Or manually: bump version, make release-workflow, make tag$(RESET)"
 
 # Quick targets for common tasks
 all: clean build test lint ## Clean, build, test, and lint
