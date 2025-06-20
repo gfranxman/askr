@@ -43,18 +43,48 @@ impl PromptConfig {
             verbose: args.verbose,
             validation_rules,
             ui_config: UiConfig {
-                no_color: args.no_color,
-                width: args.width,
+                no_color: Self::resolve_no_color(args.no_color),
+                width: Self::resolve_width(args.width),
                 help_text: args.help_text,
             },
             interaction_config: InteractionConfig {
-                timeout: args.timeout.map(Duration::from_secs),
+                timeout: Self::resolve_timeout(args.timeout),
                 max_attempts: args.max_attempts,
                 default_value: args.default,
                 mask_input: args.mask,
                 require_confirmation: args.confirm,
             },
         })
+    }
+
+    /// Resolve no_color setting from CLI args or environment variable
+    fn resolve_no_color(cli_no_color: bool) -> bool {
+        if cli_no_color {
+            true
+        } else {
+            std::env::var("ASKR_NO_COLOR").is_ok()
+        }
+    }
+
+    /// Resolve width setting from CLI args or environment variable
+    fn resolve_width(cli_width: Option<u16>) -> Option<u16> {
+        cli_width.or_else(|| {
+            std::env::var("ASKR_WIDTH")
+                .ok()
+                .and_then(|s| s.parse::<u16>().ok())
+        })
+    }
+
+    /// Resolve timeout setting from CLI args or environment variable
+    fn resolve_timeout(cli_timeout: Option<u64>) -> Option<Duration> {
+        cli_timeout
+            .map(Duration::from_secs)
+            .or_else(|| {
+                std::env::var("ASKR_TIMEOUT")
+                    .ok()
+                    .and_then(|s| s.parse::<u64>().ok())
+                    .map(Duration::from_secs)
+            })
     }
 
     fn build_validation_rules(args: &PromptArgs) -> Result<Vec<ValidationRuleConfig>> {
