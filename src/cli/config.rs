@@ -77,14 +77,12 @@ impl PromptConfig {
 
     /// Resolve timeout setting from CLI args or environment variable
     fn resolve_timeout(cli_timeout: Option<u64>) -> Option<Duration> {
-        cli_timeout
-            .map(Duration::from_secs)
-            .or_else(|| {
-                std::env::var("ASKR_TIMEOUT")
-                    .ok()
-                    .and_then(|s| s.parse::<u64>().ok())
-                    .map(Duration::from_secs)
-            })
+        cli_timeout.map(Duration::from_secs).or_else(|| {
+            std::env::var("ASKR_TIMEOUT")
+                .ok()
+                .and_then(|s| s.parse::<u64>().ok())
+                .map(Duration::from_secs)
+        })
     }
 
     fn build_validation_rules(args: &PromptArgs) -> Result<Vec<ValidationRuleConfig>> {
@@ -263,7 +261,10 @@ impl PromptConfig {
 
         // Choice validation - support custom separators
         let choices_opt = if let Some(choices_str) = &args.choices {
-            Some(Self::parse_choices(choices_str, args.choice_separator.as_deref()))
+            Some(Self::parse_choices(
+                choices_str,
+                args.choice_separator.as_deref(),
+            ))
         } else {
             None
         };
@@ -274,7 +275,7 @@ impl PromptConfig {
                 "case_sensitive".to_string(),
                 args.choices_case_sensitive.to_string(),
             );
-            
+
             let min_choices = args.min_choices.unwrap_or(1);
             let max_choices = args.max_choices.unwrap_or_else(|| {
                 if args.min_choices.is_some() {
@@ -285,12 +286,15 @@ impl PromptConfig {
                     1
                 }
             });
-            
+
             parameters.insert("min_choices".to_string(), min_choices.to_string());
             parameters.insert("max_choices".to_string(), max_choices.to_string());
             parameters.insert(
                 "selection_separator".to_string(),
-                args.selection_separator.as_deref().unwrap_or(",").to_string(),
+                args.selection_separator
+                    .as_deref()
+                    .unwrap_or(",")
+                    .to_string(),
             );
 
             rules.push(ValidationRuleConfig {

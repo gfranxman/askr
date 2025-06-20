@@ -16,7 +16,7 @@ pub struct ChoiceMenu {
     validation_error: Option<String>,
     last_content_lines: u16, // Track how many content lines were drawn last time
     timeout: Duration,
-    has_defaults: bool, // Track if defaults were provided
+    has_defaults: bool,        // Track if defaults were provided
     user_has_interacted: bool, // Track if user has made any selections/deselections
 }
 
@@ -73,10 +73,10 @@ impl ChoiceMenu {
     pub fn show(&mut self, prompt_text: &str) -> Result<Vec<String>> {
         use crossterm::{terminal::Clear, terminal::ClearType, ExecutableCommand};
         use std::io::stderr;
-        
+
         // Clear any existing content on the current line first
         stderr().execute(Clear(ClearType::CurrentLine))?;
-        
+
         let (width, height) = self.terminal.size()?;
         let layout = LayoutManager::new(width, height);
         let mut screen = Screen::new(stderr(), layout, self.colorizer.clone());
@@ -219,8 +219,17 @@ impl ChoiceMenu {
         Ok(())
     }
 
-    fn clear_and_redraw(&mut self, screen: &mut Screen<io::Stderr>, prompt_text: &str) -> Result<()> {
-        use crossterm::{cursor::{MoveUp, MoveToColumn}, terminal::Clear, terminal::ClearType, ExecutableCommand};
+    fn clear_and_redraw(
+        &mut self,
+        screen: &mut Screen<io::Stderr>,
+        prompt_text: &str,
+    ) -> Result<()> {
+        use crossterm::{
+            cursor::{MoveToColumn, MoveUp},
+            terminal::Clear,
+            terminal::ClearType,
+            ExecutableCommand,
+        };
 
         // Move back using the tracked number of content lines from last draw
         // Add 1 to account for the prompt line
@@ -236,7 +245,7 @@ impl ChoiceMenu {
 
         // Redraw the full menu (prompt + instruction + choices + error)
         self.draw_menu(screen, prompt_text)?;
-        
+
         // Update the line count for next time
         self.update_content_line_count();
 
@@ -262,7 +271,10 @@ impl ChoiceMenu {
             if self.min_choices == self.max_choices {
                 format!("Select exactly {} choice(s). Use ↑↓ to navigate, SPACE to toggle, ENTER to submit:", self.min_choices)
             } else {
-                format!("Select {}-{} choice(s). Use ↑↓ to navigate, SPACE to toggle, ENTER to submit:", self.min_choices, self.max_choices)
+                format!(
+                    "Select {}-{} choice(s). Use ↑↓ to navigate, SPACE to toggle, ENTER to submit:",
+                    self.min_choices, self.max_choices
+                )
             }
         } else {
             "Use ↑↓ to navigate, ENTER to select:".to_string()
@@ -333,7 +345,7 @@ impl ChoiceMenu {
     /// Validate current selections against min/max constraints
     fn validate_selections(&mut self) {
         let selected_count = self.selected_choices.iter().filter(|&&s| s).count();
-        
+
         self.validation_error = if selected_count < self.min_choices {
             Some(format!("At least {} choice(s) required", self.min_choices))
         } else if selected_count > self.max_choices {
@@ -393,7 +405,6 @@ impl ChoiceMenu {
 
         Ok(())
     }
-
 }
 
 impl Drop for ChoiceMenu {

@@ -515,26 +515,28 @@ impl InteractivePrompt {
 
     fn prompt_confirmation(&mut self, original_input: &str) -> Result<Option<String>> {
         use std::io::{self, Write};
-        
+
         // Print newline and confirmation prompt
         eprintln!();
         eprint!("Confirm input: ");
         io::stderr().flush()?;
-        
+
         // Create a new terminal instance for confirmation prompt
         let terminal = Terminal::new()?;
         let engine = ValidationEngine::new(); // No validation for confirmation, just matching
-        
+
         // Create a simplified config for confirmation prompt
         let mut confirmation_config = self.config.clone();
         confirmation_config.prompt_text = Some("Confirm input:".to_string());
         confirmation_config.validation_rules.clear(); // No validation rules for confirmation
         confirmation_config.interaction_config.require_confirmation = false; // Avoid infinite recursion
-        confirmation_config.interaction_config.mask_input = self.config.interaction_config.mask_input; // Keep same masking behavior
-        
-        let mut confirmation_prompt = InteractivePrompt::new(terminal, engine, confirmation_config)?;
+        confirmation_config.interaction_config.mask_input =
+            self.config.interaction_config.mask_input; // Keep same masking behavior
+
+        let mut confirmation_prompt =
+            InteractivePrompt::new(terminal, engine, confirmation_config)?;
         let confirmation_input = confirmation_prompt.prompt()?;
-        
+
         // Check if inputs match
         if original_input == confirmation_input {
             Ok(Some(original_input.to_string()))
@@ -565,11 +567,12 @@ impl InteractivePrompt {
                     .unwrap_or_else(|| ",".to_string());
 
                 // Parse default selections if provided
-                let default_selections = if let Some(default_value) = &self.config.interaction_config.default_value {
-                    self.parse_default_choices(default_value, &selection_separator, choices)
-                } else {
-                    Vec::new()
-                };
+                let default_selections =
+                    if let Some(default_value) = &self.config.interaction_config.default_value {
+                        self.parse_default_choices(default_value, &selection_separator, choices)
+                    } else {
+                        Vec::new()
+                    };
 
                 return Some(ChoiceConfig {
                     choices: choices.clone(),
@@ -584,7 +587,12 @@ impl InteractivePrompt {
         None
     }
 
-    fn parse_default_choices(&self, default_value: &str, selection_separator: &str, available_choices: &[String]) -> Vec<String> {
+    fn parse_default_choices(
+        &self,
+        default_value: &str,
+        selection_separator: &str,
+        available_choices: &[String],
+    ) -> Vec<String> {
         // Parse the default value using the same separator as selections
         let default_choices: Vec<String> = default_value
             .split(selection_separator)
@@ -595,7 +603,11 @@ impl InteractivePrompt {
         // Filter to only include valid choices that exist in available_choices
         default_choices
             .into_iter()
-            .filter(|choice| available_choices.iter().any(|available| available == choice))
+            .filter(|choice| {
+                available_choices
+                    .iter()
+                    .any(|available| available == choice)
+            })
             .collect()
     }
 
@@ -611,7 +623,7 @@ impl InteractivePrompt {
             .interaction_config
             .timeout
             .unwrap_or(Duration::from_secs(300));
-        
+
         let mut choice_menu = ChoiceMenu::new(
             terminal,
             choice_config.choices,

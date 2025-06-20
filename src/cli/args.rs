@@ -5,7 +5,8 @@ use clap::{Parser, Subcommand, ValueEnum, ValueHint};
 #[command(name = "askr")]
 #[command(about = "Interactive CLI input tool with real-time validation and choice menus")]
 #[command(version = "0.1.2")]
-#[command(long_about = "Interactive CLI input tool with real-time validation and choice menus.
+#[command(
+    long_about = "Interactive CLI input tool with real-time validation and choice menus.
 
 SHELL INTEGRATION EXAMPLES:
   # Select from files in current directory
@@ -24,7 +25,8 @@ SHELL INTEGRATION EXAMPLES:
   askr \"Choose files:\" --choices \"$(find . -name '*.rs')\" --selection-separator \" \" --max-choices 5
 
   # Specialized workflows with custom separators
-  askr \"Select options:\" --choices \"option1::option2::option3\" --choice-separator \"::\" --selection-separator \" + \"")]
+  askr \"Select options:\" --choices \"option1::option2::option3\" --choice-separator \"::\" --selection-separator \" + \""
+)]
 pub struct Args {
     #[command(subcommand)]
     pub command: Option<Commands>,
