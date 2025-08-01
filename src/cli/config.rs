@@ -282,8 +282,12 @@ impl PromptConfig {
                     // If min_choices is specified, default max_choices to all available choices
                     choices.len()
                 } else {
-                    // If neither is specified, default to single selection
-                    1
+                    // If neither is specified but multiple choices available, default to multiple selection
+                    if choices.len() > 1 {
+                        choices.len()
+                    } else {
+                        1
+                    }
                 }
             });
 
